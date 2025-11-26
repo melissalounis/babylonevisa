@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmation de Demande - Visa Regroupement Familial</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-blue: #0055b8;
+      --secondary-blue: #2c3e50;
+      --accent-red: #ce1126;
+      --light-blue: #e8f2ff;
+      --light-gray: #f4f7fa;
+      --white: #ffffff;
+      --success-green: #28a745;
+      --border-color: #dbe4ee;
+      --text-dark: #2c3e50;
+      --text-light: #6c757d;
+      --shadow: 0 4px 12px rgba(0, 85, 184, 0.1);
+      --transition: all 0.3s ease;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--light-gray);
+      color: var(--text-dark);
+      line-height: 1.6;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: var(--white);
+      padding: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+    
+    header {
+      background: linear-gradient(135deg, var(--success-green), #20c997);
+      color: var(--white);
+      padding: 40px 30px;
+      text-align: center;
+      position: relative;
+    }
+    
+    header h1 {
+      font-size: 2.2rem;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+    
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+    
+    .success-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      animation: bounce 1s ease-in-out;
+    }
+    
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-10px);
+      }
+      60% {
+        transform: translateY(-5px);
+      }
+    }
+    
+    .confirmation-content {
+      padding: 40px 30px;
+    }
+    
+    .confirmation-message {
+      margin-bottom: 30px;
+    }
+    
+    .confirmation-message h2 {
+      color: var(--success-green);
+      font-size: 1.8rem;
+      margin-bottom: 15px;
+    }
+    
+    .confirmation-message p {
+      font-size: 1.1rem;
+      color: var(--text-light);
+      margin-bottom: 10px;
+    }
+    
+    .next-steps {
+      background: var(--light-blue);
+      padding: 25px;
+      border-radius: 8px;
+      margin: 30px 0;
+      text-align: left;
+    }
+    
+    .next-steps h3 {
+      color: var(--primary-blue);
+      margin-bottom: 15px;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+    }
+    
+    .next-steps h3 i {
+      margin-right: 10px;
+    }
+    
+    .next-steps ul {
+      list-style-type: none;
+      padding-left: 0;
+    }
+    
+    .next-steps li {
+      padding: 8px 0;
+      padding-left: 30px;
+      position: relative;
+    }
+    
+    .next-steps li i {
+      position: absolute;
+      left: 0;
+      top: 10px;
+      color: var(--success-green);
+    }
+    
+    .details-box {
+      background: var(--light-gray);
+      padding: 20px;
+      border-radius: 8px;
+      margin: 25px 0;
+      text-align: left;
+    }
+    
+    .details-box h3 {
+      color: var(--secondary-blue);
+      margin-bottom: 15px;
+      font-size: 1.2rem;
+    }
+    
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .detail-item:last-child {
+      border-bottom: none;
+    }
+    
+    .detail-label {
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+    
+    .detail-value {
+      color: var(--text-light);
+    }
+    
+    .actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 14px 30px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(to right, var(--primary-blue), #0066cc);
+      color: var(--white);
+      box-shadow: 0 4px 8px rgba(0, 85, 184, 0.3);
+    }
+    
+    .btn-primary:hover {
+      background: linear-gradient(to right, #004a9e, #0055b8);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 85, 184, 0.4);
+    }
+    
+    .btn-secondary {
+      background: var(--white);
+      color: var(--primary-blue);
+      border: 2px solid var(--primary-blue);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--light-blue);
+      transform: translateY(-2px);
+    }
+    
+    .btn i {
+      margin-right: 8px;
+    }
+    
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: var(--light-blue);
+      color: var(--text-light);
+      font-size: 0.9rem;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .reference-number {
+      background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    
+    @media (max-width: 768px) {
+      .actions {
+        flex-direction: column;
+      }
+      
+      .btn {
+        width: 100%;
+      }
+      
+      header h1 {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="success-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <h1>Demande Enregistrée avec Succès !</h1>
+      <p>Votre demande de regroupement familial a été soumise avec succès</p>
+    </header>
+    
+    <div class="confirmation-content">
+      <div class="confirmation-message">
+        <h2>Félicitations !</h2>
+        <p>Votre demande de visa pour le regroupement familial a été enregistrée dans notre système.</p>
+        <p>Nous avons bien reçu tous vos documents et informations.</p>
+      </div>
+      
+      <div class="reference-number">
+        <i class="fa-solid fa-hashtag"></i>
+        Numéro de référence : <span id="refNumber">FR-VISA-<?php echo date('Ymd-His'); ?></span>
+      </div>
+      
+      <div class="next-steps">
+        <h3><i class="fa-solid fa-list-check"></i> Prochaines Étapes</h3>
+        <ul>
+          <li><i class="fa-solid fa-check"></i> Vérification initiale des documents (2-3 jours ouvrables)</li>
+          <li><i class="fa-solid fa-envelope"></i> Réception d'un email de confirmation sous 24h</li>
+          <li><i class="fa-solid fa-magnifying-glass"></i> Examen approfondi du dossier (7-10 jours)</li>
+          <li><i class="fa-solid fa-phone"></i> Contact éventuel pour informations complémentaires</li>
+          <li><i class="fa-solid fa-file-signature"></i> Décision finale sous 15 jours ouvrables</li>
+        </ul>
+      </div>
+      
+      <div class="details-box">
+        <h3><i class="fa-solid fa-clock"></i> Délais de Traitement</h3>
+        <div class="detail-item">
+          <span class="detail-label">Traitement standard :</span>
+          <span class="detail-value">15 jours ouvrables</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Traitement urgent :</span>
+          <span class="detail-value">7 jours ouvrables (sur demande)</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Suivi en ligne :</span>
+          <span class="detail-value">Disponible sous 48h</span>
+        </div>
+      </div>
+      
+      <div class="actions">
+        <a href="dashboard.html" class="btn btn-primary">
+          <i class="fa-solid fa-gauge-high"></i> Tableau de Bord
+        </a>
+        <a href="index.html" class="btn btn-secondary">
+          <i class="fa-solid fa-plus"></i> Nouvelle Demande
+        </a>
+        <a href="#" class="btn btn-secondary" onclick="window.print()">
+          <i class="fa-solid fa-print"></i> Imprimer
+        </a>
+      </div>
+    </div>
+    
+    <footer>
+      <p><i class="fa-solid fa-phone"></i> Service Client : +33 1 23 45 67 89</p>
+      <p><i class="fa-solid fa-envelope"></i> Email : contact@babylone-service.fr</p>
+      <p>© 2025 Babylone service. Tous droits réservés.</p>
+    </footer>
+  </div>
+
+  <script>
+    // Générer un numéro de référence unique
+    document.addEventListener('DOMContentLoaded', function() {
+      const refNumber = 'FR-VISA-' + new Date().getTime();
+      document.getElementById('refNumber').textContent = refNumber;
+      
+      // Stocker le numéro de référence dans le localStorage
+      localStorage.setItem('lastReference', refNumber);
+    });
+  </script>
+</body>
+</html>

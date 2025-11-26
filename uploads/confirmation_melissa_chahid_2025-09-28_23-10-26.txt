@@ -1,0 +1,18 @@
+
+        CONFIRMATION DE DEMANDE DE VISA
+        ================================
+        
+        Pays: france
+        Type de visa: touriste
+        
+        Informations personnelles:
+        - Nom: melissa
+        - Prénom: chahid
+        - Email: kami@gmail.com
+        - Téléphone: 0556603313
+        
+        Date de soumission: 28/09/2025 23:10:26
+        
+        Votre demande a été enregistrée avec succès.
+        Vous recevrez un email de confirmation sous peu.
+    
