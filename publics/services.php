@@ -649,7 +649,7 @@ include __DIR__ . '/../includes/header.php';
         </a>
 
         <!-- Nouveau service: Réservation d'Hôtel -->
-        <a href="réservation hotel.php" class="service-card-hotel">
+        <a href="../public/réservation hotel.php" class="service-card-hotel">
             <i class="fas fa-hotel"></i>
             <h3>Réservation d'Hôtel</h3>
             <p>Trouvez l'hébergement parfait pour votre séjour où que vous soyez.</p>
@@ -660,7 +660,7 @@ include __DIR__ . '/../includes/header.php';
         </a>
 
         <!-- Nouveau service: Réservation de Billet -->
-        <a href="réservation billet.php" class="service-card-billet">
+        <a href="../public/réservation billet.php" class="service-card-billet">
             <i class="fas fa-ticket-alt"></i>
             <h3>Réservation de Billets</h3>
             <p>Accédez aux meilleurs tarifs pour tous vos déplacements.</p>
@@ -670,7 +670,7 @@ include __DIR__ . '/../includes/header.php';
         </a>
 
         <!-- Nouveau service: Test de Langues -->
-        <a href="test_langues.php" class="service-card-langues">
+        <a href="../public/test_de_langue.php" class="service-card-langues">
             <i class="fas fa-language"></i>
             <h3>Test de Langues</h3>
             <p>Préparez et passez vos tests de langue officiels pour vos projets internationaux.</p>

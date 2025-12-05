@@ -1,9 +1,3 @@
-<?php
-/**
- * Section Procédures d'Immigration Canada - Version Slider
- * À inclure dans la page d'accueil
- */
-?>
 
 <!-- Section Immigration Canada -->
 <section class="immigration-canada-section">

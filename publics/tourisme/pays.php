@@ -43,7 +43,7 @@ include __DIR__ . '/../../includes/header.php';
         color: white;
         text-align: center;
         overflow: hidden;
-        background: url('../images/vol.avif');
+        background:url('../images/travail.avif');
         margin-top: -40px;
     }
     
@@ -352,98 +352,152 @@ include __DIR__ . '/../../includes/header.php';
 <section class="pays-hero">
     <div class="pays-hero-overlay"></div>
     <div class="pays-hero-content">
-        <h1>Destinations Touristiques</h1>
-        <p>Découvrez des expériences uniques dans les plus belles destinations du monde</p>
+        <h1>Nos Destinations</h1>
+        <p>Découvrez tous les pays où nous pouvons vous accompagner</p>
     </div>
 </section>
 
 <!-- PAYS -->
-<section class="countries-section">
-    <h2 class="section-title">Toutes nos destinations</h2>
-    
-    
-    
+    <h2 class="section-title">Destinations populaires</h2>
     <div class="countries">
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image:url('../images/france.jpg');">
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image:url('../../public/images/france.jpg');">
             <div class="country-label">
-                <img class="flag-icon" src="https://flagcdn.com/w40/fr.png" alt="FR">
+                <img class="flag-icon" src="https://flagcdn.com/w40/fr.png" alt="Drapeau France">
                 <span>France</span>
             </div>
         </a>
 
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/canada.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/ca.png" class="flag-icon"> <span>Canada</span></div>
-        </a>
-
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/espagne.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/es.png" class="flag-icon"> <span>Espagne</span></div>
-        </a>
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/bulgarie.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/bg.png" class="flag-icon"> <span>Bulgarie</span></div>
-        </a>
-
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/turquie.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/tr.png" class="flag-icon"> <span>Turquie</span></div>
-        </a>
-
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/italie.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/it.png" class="flag-icon"> <span>Italie</span></div>
-        </a>
-
-        <a href=".../../tourisme/tourisme.php" class="country" style="background-image: url('../images/USA.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/us.png" class="flag-icon"> <span>USA</span></div>
-        </a>
-        
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/allemagne.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/de.png" class="flag-icon"> <span>Allemagne</span></div>
-        </a>
-        
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/istonie.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/ee.png" class="flag-icon"> <span>Estonie</span></div>
-        </a>
-        
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/malte.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/mt.png" class="flag-icon"> <span>Malte</span></div>
-        </a>
-    
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/Pologne.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/pl.png" class="flag-icon"> <span>Pologne</span></div>
-        </a>
-        
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/belgique.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/be.png" class="flag-icon"> <span>Belgique</span></div>
-        </a>
-         
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/roumanie.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/ro.png" class="flag-icon"> <span>Roumanie</span></div>
-        </a>
-         
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/portugal.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/pt.png" class="flag-icon"> <span>Portugal</span></div>
-        </a>
-         
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/uk.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/gb.png" class="flag-icon"> <span>Royaume-Uni</span></div>
-        </a>
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/irlande.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/ir.png" class="flag-icon"> <span>Irlande</span></div>
-        </a>
-       <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('images/luxembourg.jpg');">
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/canada.jpg');">
             <div class="country-label">
-                <img src="https://flagcdn.com/w40/lu.png" class="flag-icon"> 
-                <span>Luxembourg</span>
+                <img class="flag-icon" src="https://flagcdn.com/w40/ca.png" alt="Drapeau Canada">
+                <span>Canada</span>
             </div>
         </a>
-        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../images/suisse.jpg');">
-            <div class="country-label"><img src="https://flagcdn.com/w40/ch.png" class="flag-icon"> <span>Suisse</span></div>
+
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/espagne.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/es.png" alt="Drapeau Espagne">
+                <span>Espagne</span>
+            </div>
         </a>
-         <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('images/holande.jpg');">
+        
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/bulgarie.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/bg.png" alt="Drapeau Bulgarie">
+                <span>Bulgarie</span>
+            </div>
+        </a>
+
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/turquie.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/tr.png" alt="Drapeau Turquie">
+                <span>Turquie</span>
+            </div>
+        </a>
+
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/italie.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/it.png" alt="Drapeau Italie">
+                <span>Italie</span>
+            </div>
+        </a>
+
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/usa.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/us.png" alt="Drapeau USA">
+                <span>USA</span>
+            </div>
+        </a>
+        
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/allemagne.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/de.png" alt="Drapeau Allemagne">
+                <span>Allemagne</span>
+            </div>
+        </a>
+        
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/istonie.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/ee.png" alt="Drapeau Estonie">
+                <span>Estonie</span>
+            </div>
+        </a>
+        
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/malte.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/mt.png" alt="Drapeau Malte">
+                <span>Malte</span>
+            </div>
+        </a>
+        
+        <a href="../../tourisme/tourisme.php class="country" style="background-image: url('../../public/images/pologne.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/pl.png" alt="Drapeau Pologne">
+                <span>Pologne</span>
+            </div>
+        </a>
+         <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/hongrie.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/hn.png" alt="Drapeau hongrie">
+                <span>Hongrie</span>
+            </div>
+        </a>
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/holande.jpg');">
     <div class="country-label">
         <img class="flag-icon" src="https://flagcdn.com/w40/nl.png" alt="Drapeau des Pays-Bas">
         <span>Pays-Bas</span>
     </div>
 </a>
 
+        
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/belgique.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/be.png" alt="Drapeau Belgique">
+                <span>Belgique</span>
+            </div>
+        </a>
+         
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/roumanie.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/ro.png" alt="Drapeau Roumanie">
+                <span>Roumanie</span>
+            </div>
+        </a>
+         
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/portugal.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/pt.png" alt="Drapeau Portugal">
+                <span>Portugal</span>
+            </div>
+        </a>
+         
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/uk.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/gb.png" alt="Drapeau Royaume-Uni">
+                <span>Royaume-Uni</span>
+            </div>
+        </a>
+        
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/irlande.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/ie.png" alt="Drapeau Irlande">
+                <span>Irlande</span>
+            </div>
+        </a>
+       
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/luxembourg.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/lu.png" alt="Drapeau Luxembourg">
+                <span>Luxembourg</span>
+            </div>
+        </a>
+        
+        <a href="../../tourisme/tourisme.php" class="country" style="background-image: url('../../public/images/suisse.jpg');">
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/ch.png" alt="Drapeau Suisse">
+                <span>Suisse</span>
+            </div>
+        </a>
     </div>
 </section>
 

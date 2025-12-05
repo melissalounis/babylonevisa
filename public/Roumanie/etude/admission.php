@@ -8,18 +8,14 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Paramètres de connexion
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
-
+require_once '../../../config.php';
 // Traitement du formulaire
 $success_message = '';
 $error_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+        $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8", $db_user, $db_pass);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         // Récupérer l'email de l'utilisateur

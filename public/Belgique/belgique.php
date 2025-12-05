@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '../../../config.php';
 $page_title = "Belgique — Services";
-include __DIR__ . '/../../includes/header.php';
+include __DIR__ . '../../../includes/header.php';
 ?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1044,4 +1044,4 @@ h1, h2, h3, h4, h5, h6 {
   });
 </script>
 
-<?php include __DIR__ . '/../../includes/footer.php'; ?>
+<?php include __DIR__ . '../../../includes/footer.php'; ?>

@@ -7,10 +7,8 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit();
 }
 
-$host = "localhost";
-$dbname = "babylone_service";
-$username = "root";
-$password = "";
+// Inclure le fichier de configuration
+include '../config.php';
 
 // Initialiser TOUTES les variables AVANT le try-catch
 $success = $error = "";
@@ -26,9 +24,6 @@ $filtre_statut = $_GET['statut'] ?? '';
 $filtre_domaine = $_GET['domaine'] ?? '';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
     // Gestion du changement de statut
     if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['changer_statut'])) {
         $demande_id = $_POST['demande_id'];

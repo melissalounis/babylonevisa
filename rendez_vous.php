@@ -4,30 +4,13 @@
 session_start();
 
 // Configuration de la base de données
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'babylone_service'); 
-define('DB_USER', 'root');
-define('DB_PASS', '');
-
+require_once __DIR__ . '../config.php';
 // Initialisation des variables
 $errors = [];
 $success = false;
 $rendez_vous_id = null;
 $reference = '';
 
-// Fonction de connexion sécurisée à la base de données
-function connectDB() {
-    try {
-        $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8", DB_USER, DB_PASS);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-        return $pdo;
-    } catch(PDOException $e) {
-        error_log("Erreur de connexion BD: " . $e->getMessage());
-        $_SESSION['form_errors'] = ["Erreur de connexion à la base de données. Veuillez réessayer plus tard."];
-        return null;
-    }
-}
 
 // Fonction de validation des entrées
 function test_input($data) {

@@ -10,14 +10,10 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 
 // Connexion DB
-$host = "localhost";
-$dbname = "babylone_service";
-$username = "root";
-$password = "";
+require_once __DIR__ . '../../../config.php';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
 } catch (Exception $e) {
     die("Erreur DB : " . $e->getMessage());
 }

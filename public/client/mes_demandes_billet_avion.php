@@ -10,6 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $user_email = $_SESSION['user_email'] ?? '';
+require_once __DIR__ . '../../../config.php';
 
 // Traitement de l'annulation si le formulaire est soumis
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['annuler_demande'])) {
@@ -17,8 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['annuler_demande'])) {
     
     if (!empty($demande_id)) {
         try {
-            $pdo = new PDO("mysql:host=localhost;dbname=babylone_service", "root", "");
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
             
             // Vérifier que la demande appartient bien à l'utilisateur
             $sql_verif = "SELECT id FROM demandes_billets_avion WHERE id = :id AND user_email = :user_email";

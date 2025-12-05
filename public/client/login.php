@@ -11,7 +11,7 @@ if (isset($_SESSION['user_id'])) {
 }
 
 // Chemin correct vers config.php (adapté à la structure de vos dossiers)
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '../../../config.php';
 
 // Protection contre les attaques par force brute
 if (!isset($_SESSION['login_attempts'])) {

@@ -1,6 +1,3 @@
-<?php
-// realisations.php - Slider automatique des visas
-?>
 
 <!-- Section Slider des Réalisations -->
 <section class="realisations-slider-section">

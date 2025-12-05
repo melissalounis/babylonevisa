@@ -4,16 +4,16 @@
 // ====================
 // CONFIGURATION BD
 // ====================
-$DB_HOST = 'localhost';
-$DB_NAME = 'babylone_service';
-$DB_USER = 'root';
-$DB_PASS = ''; // XAMPP : mot de passe vide par défaut
+$db_host = 'localhost';
+$db_name = 'babylone_service';
+$db_user = 'root';
+$db_pass = ''; // XAMPP : mot de passe vide par défaut
 
 try {
     $pdo = new PDO(
-        "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8mb4",
-        $DB_USER,
-        $DB_PASS,
+        "mysql:host=$db_host;dbname=$db_name;charset=utf8mb4",
+        $db_user,
+        $db_pass,
         [
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
@@ -53,7 +53,7 @@ function is_admin() {
 // Redirection si non connecté
 function require_login() {
     if (!is_logged_in()) {
-        header("Location: /babylone/public/client/login.php");
+        header("Location: public/client/login.php");
         exit;
     }
 }

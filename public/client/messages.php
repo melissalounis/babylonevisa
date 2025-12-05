@@ -2,26 +2,9 @@
 // Démarrer la session
 session_start();
 
-// Configuration de la base de données
-$DB_HOST = 'localhost';
-$DB_NAME = 'babylone_service';
-$DB_USER = 'root';
-$DB_PASS = '';
 
 // Connexion à la base de données
-try {
-    $pdo = new PDO(
-        "mysql:host=$DB_HOST;dbname=$DB_NAME;charset=utf8mb4",
-        $DB_USER,
-        $DB_PASS,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-        ]
-    );
-} catch (PDOException $e) {
-    die("Connexion BD échouée: " . htmlspecialchars($e->getMessage()));
-}
+require_once __DIR__ . '../../../config.php';
 
 // Fonction d'échappement pour sécurité
 function e($s) {

@@ -9,6 +9,21 @@ include __DIR__ . '/../includes/header.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accueil - Babylone Service</title>
+    <!-- TEST FAVICON - À ajouter après les liens favicon -->
+<meta name="test-images" content="Test des chemins d'images">
+
+    
+    <!-- FAVICON AVEC CHEMINS CORRECTS -->
+    <link rel="apple-touch-icon" sizes="180x180" href="images/favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/x-icon" href="images/favicon/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="images/favicon/favicon.svg">
+    <link rel="icon" type="image/png" sizes="96x96" href="images/favicon/favicon-96x96.png">
+    <link rel="manifest" href="images/favicon/site.webmanifest">
+    <link rel="icon" type="image/png" sizes="192x192" href="images/favicon/web-app-manifest-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="images/favicon/web-app-manifest-512x512.png">
+    <meta name="theme-color" content="#1a5f7a">
+    
+    <!-- CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* ===== VARIABLES CSS ===== */

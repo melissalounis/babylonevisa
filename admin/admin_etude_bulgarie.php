@@ -7,19 +7,27 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit();
 }
 
-// Configuration de la base de données
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'babylone_service');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// Inclure le fichier de configuration
+include '../config.php';
 
-// Connexion à la base de données
-try {
-    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    die("Erreur de connexion à la base de données: " . $e->getMessage());
+
+
+if (!isset($pdo)) {
+    try {
+        $pdo = new PDO(
+            "mysql:host=$db_host;dbname=$db_name;charset=utf8mb4",
+            $db_user,
+            $db_pass,
+            [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+            ]
+        );
+    } catch (PDOException $e) {
+        die("Connexion BD échouée: " . htmlspecialchars($e->getMessage()));
+    }
 }
+
 
 // Traitement des actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

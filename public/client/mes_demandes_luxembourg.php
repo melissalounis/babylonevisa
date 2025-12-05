@@ -11,11 +11,7 @@ $user_id = $_SESSION['user_id'];
 $user_nom = $_SESSION['user_nom'] ?? 'Utilisateur';
 
 // Connexion BDD
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
-
+require_once __DIR__ . '../../../config.php';
 // Configuration
 $config = [
     'programmes' => [

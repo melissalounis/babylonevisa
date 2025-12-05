@@ -7,10 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Paramètres de connexion
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
+require_once __DIR__ . '../../../config.php';
 
 // Initialiser les variables
 $demandes_italie = [];
@@ -19,9 +16,7 @@ $stats = ['total' => 0, 'en_attente' => 0, 'en_cours' => 0, 'approuvee' => 0, 'r
 
 try {
     // Connexion à la base de données
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+   
 
     // Récupérer l'ID de l'utilisateur
     $user_id = $_SESSION['user_id'];

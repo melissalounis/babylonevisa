@@ -639,7 +639,7 @@ include __DIR__ . '/../../includes/header.php';
     
     <div class="countries">
         <!-- Europe -->
-        <a href="france/etudes/etudes.php" class="country" style="background-image:url('../images/france.jpg');" data-region="europe">
+        <a href="../../public/france/etudes/etudes.php" class="country" style="background-image:url('../images/france.jpg');" data-region="europe">
       
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/fr.png" alt="Drapeau France">
@@ -647,7 +647,7 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         </a>
 
-        <a href="canada/etude/admission.php" class="country" style="background-image: url('../images/canada.jpg');" data-region="amerique">
+        <a href="../../public/canada/etude/admission.php" class="country" style="background-image: url('../images/canada.jpg');" data-region="amerique">
         
             <div class="country-label">
                 <img src="https://flagcdn.com/w40/ca.png" class="flag-icon" alt="Drapeau Canada">
@@ -655,7 +655,7 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         </a>
 
-        <a href="espagne/etudes/admission.php" class="country" style="background-image: url('../images/espagne.jpg');" data-region="europe">
+        <a href="../../public/espagne/etudes/admission.php" class="country" style="background-image: url('../images/espagne.jpg');" data-region="europe">
       
             <div class="country-label">
                 <img src="https://flagcdn.com/w40/es.png" class="flag-icon" alt="Drapeau Espagne">
@@ -663,7 +663,7 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         </a>
 
-        <a href="bulgarie/etude/etude.php" class="country" style="background-image: url('../images/bulgarie.jpg');" data-region="europe">
+        <a href="../../public/bulgarie/etude/etude.php" class="country" style="background-image: url('../images/bulgarie.jpg');" data-region="europe">
          
             <div class="country-label">
                 <img src="https://flagcdn.com/w40/bg.png" class="flag-icon" alt="Drapeau Bulgarie">
@@ -671,21 +671,21 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         </a>
 
-        <a href="turquie/etude/etudes.php" class="country" style="background-image: url('../images/turquie.jpg');" data-region="europe">
+        <a href="../../public/turquie/etude/etudes.php" class="country" style="background-image: url('../images/turquie.jpg');" data-region="europe">
        
             <div class="country-label">
                 <img src="https://flagcdn.com/w40/tr.png" class="flag-icon" alt="Drapeau Turquie">
                 <span>Turquie</span>
             </div>
         </a>
-        <a href="espagne/etudes/admission.php" class="country" style="background-image: url('../images/espagne.jpg');">
+        <a href="../../public/espagne/etudes/admission.php" class="country" style="background-image: url('../images/espagne.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/es.png" alt="Drapeau Espagne">
                 <span>Espagne</span>
             </div>
         </a>
 
-        <a href="luxembourg/etudes/etude.php" class="country" style="background-image: url('../images/luxembourg.jpg');" data-region="europe">
+        <a href="../../public/luxembourg/etudes/etude.php" class="country" style="background-image: url('../images/luxembourg.jpg');" data-region="europe">
            
             <div class="country-label">
                 <img src="https://flagcdn.com/w40/lu.png" class="flag-icon" alt="Drapeau Luxembourg">
@@ -693,7 +693,7 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         </a>
 
-        <a href="Belgique/etudes/etudes.php" class="country" style="background-image: url('../images/belgique.jpg');" data-region="europe">
+        <a href="../../public/Belgique/etudes/etudes.php" class="country" style="background-image: url('../images/belgique.jpg');" data-region="europe">
      
             <div class="country-label">
                 <img src="https://flagcdn.com/w40/be.png" class="flag-icon" alt="Drapeau Belgique">
@@ -701,14 +701,14 @@ include __DIR__ . '/../../includes/header.php';
             </div>
         </a>
 
-        <a href="Roumanie/etude/etude.php" class="country" style="background-image: url('../images/roumanie.jpg');" data-region="europe">
+        <a href="../../public/Roumanie/etude/etude.php" class="country" style="background-image: url('../images/roumanie.jpg');" data-region="europe">
             <div class="country-label">
                 <img src="https://flagcdn.com/w40/ro.png" class="flag-icon" alt="Drapeau Roumanie">
                 <span>Roumanie</span>
             </div>
         </a>
 
-        <a href="suisse/etudes/etude.php" class="country" style="background-image: url('../images/suisse.jpg');" data-region="europe">
+        <a href="../../public/suisse/etudes/etude.php" class="country" style="background-image: url('../images/suisse.jpg');" data-region="europe">
     
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/ch.png" alt="Drapeau Suisse">

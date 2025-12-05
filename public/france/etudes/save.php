@@ -3,23 +3,7 @@
 session_start();
 
 // Connexion à votre base existante babylone_service
-$config = [
-    'host' => 'localhost',
-    'dbname' => 'babylone_service', 
-    'username' => 'root',
-    'password' => ''
-];
-
-try {
-    $pdo = new PDO(
-        "mysql:host={$config['host']};dbname={$config['dbname']};charset=utf8mb4", 
-        $config['username'], 
-        $config['password']
-    );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Erreur de connexion : " . $e->getMessage());
-}
+require_once __DIR__ . '/../../../config.php';
 
 // Fonction pour générer une référence unique
 function genererReference($service_type) {

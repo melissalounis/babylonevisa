@@ -1,6 +1,6 @@
 <?php
 // Inclure la configuration
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '../../../config.php';
 
 // Vérifier si la session est déjà démarrée, sinon la démarrer
 if (session_status() === PHP_SESSION_NONE) {

@@ -8,22 +8,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit();
 }
 
-// Configuration BDD
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'babylone_service');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-
-// Récupérer les données JSON
-$input = json_decode(file_get_contents('php://input'), true);
-$id = $input['id'] ?? null;
-$statut = $input['statut'] ?? null;
-
-if (!$id || !$statut) {
-    echo json_encode(['success' => false, 'message' => 'Données manquantes']);
-    exit();
-}
-
+include '../config.php';
 try {
     $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8", DB_USER, DB_PASS);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);

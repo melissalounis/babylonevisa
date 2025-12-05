@@ -4,15 +4,7 @@
 session_start();
 
 // Configuration
-$config = [
-    'db_host' => 'localhost',
-    'db_name' => 'babylone_service',
-    'db_user' => 'root',
-    'db_pass' => '',
-    'upload_base_dir' => __DIR__ . '/../../uploads/',
-    'allowed_extensions' => ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'zip', 'rar'],
-    'max_file_size' => 50 * 1024 * 1024, // 50MB
-];
+require_once __DIR__ . '../../../config.php';
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_id'])) {

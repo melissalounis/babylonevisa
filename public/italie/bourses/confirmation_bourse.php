@@ -8,17 +8,9 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Connexion BDD
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
+require_once __DIR__ . '/../../../config.php';
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Erreur de connexion à la base de données.");
-}
+
 
 // Récupérer l'ID de la demande depuis l'URL
 $demande_id = $_GET['id'] ?? 0;

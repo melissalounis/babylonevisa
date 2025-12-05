@@ -3,17 +3,7 @@
 // Espace administrateur pour gérer les demandes de regroupement familial
 
 // Connexion à la base de données
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "babylone_service";
-
-try {
-    $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    die("Erreur de connexion: " . $e->getMessage());
-}
+require_once '../config.php';
 
 // Traitement des actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

@@ -7,10 +7,7 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$host = "localhost";
-$dbname = "babylone_service";
-$username = "root";
-$password = "";
+require_once __DIR__ . '../../../config.php';
 
 // Vérifier si l'ID est présent dans l'URL
 if (!isset($_GET['id']) || empty($_GET['id'])) {
@@ -21,8 +18,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $demande_id = $_GET['id'];
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
 
     // Récupérer les détails de la demande
     $user_id = $_SESSION['user_id'];

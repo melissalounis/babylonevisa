@@ -21,15 +21,7 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $demande_id = (int) $_GET['id'];
 
 // Connexion à la base
-try {
-    $pdo = new PDO("mysql:host=localhost;dbname=babylone_service;charset=utf8mb4", "root", "");
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo "Erreur BDD : " . $e->getMessage();
-    exit;
-}
-
+require_once __DIR__ . '../../../config.php';
 // Récupérer les détails de la demande
 $sql = "SELECT * FROM campus_france_demandes 
         WHERE id = ? AND user_id = ?";

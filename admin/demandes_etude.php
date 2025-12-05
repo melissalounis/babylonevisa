@@ -9,18 +9,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 // Connexion à la base de données pour les statistiques
-$host = "localhost";
-$dbname = "babylone_service";
-$username = "root";
-$password = "";
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    // Continuer sans statistiques si la connexion échoue
-    $pdo = null;
-}
+include '../config.php';
 
 $pays_options = [
     'france' => [

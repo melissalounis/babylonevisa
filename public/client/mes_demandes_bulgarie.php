@@ -6,20 +6,22 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Paramètres de connexion
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
-
 // Initialiser les variables
 $demandes_bulgarie = [];
 $error_message = null;
 $stats = ['total' => 0, 'nouveau' => 0, 'en_traitement' => 0, 'approuve' => 0, 'refuse' => 0];
+$user_email = '';
+$pdo = null;
 
 try {
     // Connexion à la base de données
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
+    require_once __DIR__ . '/../../config.php';
+    
+    // Vérifier si la connexion PDO existe
+    if (!isset($pdo) || !($pdo instanceof PDO)) {
+        throw new Exception("Connexion à la base de données non disponible");
+    }
+    
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
@@ -65,6 +67,8 @@ try {
 
 } catch (PDOException $e) {
     $error_message = "Erreur de connexion à la base de données : " . $e->getMessage();
+} catch (Exception $e) {
+    $error_message = "Erreur : " . $e->getMessage();
 }
 
 // Fonction pour formater les dates
@@ -86,7 +90,7 @@ function traduireStatut($statut) {
         'approuve' => 'Approuvée',
         'refuse' => 'Refusée'
     ];
-    return $traductions[$statut] ?? ucfirst($statut);
+    return $traductions[strtolower($statut)] ?? ucfirst($statut);
 }
 
 // Fonction pour traduire le programme
@@ -95,7 +99,7 @@ function traduireProgramme($programme) {
         'anglais' => 'Programme en Anglais',
         'preparatoire' => 'Année préparatoire'
     ];
-    return $traductions[$programme] ?? ucfirst($programme);
+    return $traductions[strtolower($programme)] ?? ucfirst($programme);
 }
 
 // Fonction pour traduire le niveau
@@ -107,7 +111,7 @@ function traduireNiveau($niveau) {
         'm1' => 'Master 1',
         'm2' => 'Master 2'
     ];
-    return $traductions[$niveau] ?? ucfirst($niveau);
+    return $traductions[strtolower($niveau)] ?? ucfirst($niveau);
 }
 ?>
 
@@ -422,6 +426,61 @@ function traduireNiveau($niveau) {
             border-color: #ffcccc;
         }
 
+        /* Styles pour la modal */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #666;
+        }
+
+        .modal-close:hover {
+            color: #000;
+        }
+
+        .demande-details-modal h3 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .demande-details-modal div {
+            margin-bottom: 15px;
+        }
+
+        .demande-details-modal strong {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--secondary-color);
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 15px;
@@ -455,6 +514,11 @@ function traduireNiveau($niveau) {
             
             .demande-actions {
                 justify-content: center;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
             }
         }
     </style>
@@ -542,14 +606,14 @@ function traduireNiveau($niveau) {
                 <?php if (!empty($demandes_bulgarie)): ?>
                     <?php foreach ($demandes_bulgarie as $demande): ?>
                         <?php 
-                        $demande_id = htmlspecialchars($demande['id']);
+                        $demande_id = htmlspecialchars($demande['id'] ?? '');
                         $statut = $demande['statut'] ?? 'nouveau';
                         $date_soumission = formatDateTime($demande['date_soumission'] ?? '');
                         $programme = traduireProgramme($demande['programme'] ?? '');
                         $niveau = traduireNiveau($demande['niveau_etude'] ?? '');
                         
                         // Déterminer l'icône et la classe CSS selon le statut
-                        switch ($statut) {
+                        switch (strtolower($statut)) {
                             case 'approuve':
                                 $icone = "<i class='fas fa-check-circle'></i>";
                                 $classe_statut = "statut-approuve";
@@ -591,7 +655,7 @@ function traduireNiveau($niveau) {
                                     <i class="fas fa-eye"></i> Détails
                                 </button>
                                 
-                                <?php if ($statut === 'nouveau'): ?>
+                                <?php if (strtolower($statut) === 'nouveau'): ?>
                                     <a href="modifier_demande_bulgarie.php?id=<?= $demande_id ?>" class="btn-action">
                                         <i class="fas fa-edit"></i> Modifier
                                     </a>
@@ -617,9 +681,9 @@ function traduireNiveau($niveau) {
     </div>
 
     <!-- Modal pour les détails -->
-    <div id="detailsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-        <div style="background: white; margin: 50px auto; padding: 30px; border-radius: 15px; max-width: 600px; max-height: 80vh; overflow-y: auto; position: relative;">
-            <span style="position: absolute; right: 20px; top: 20px; font-size: 2rem; cursor: pointer;" onclick="fermerModal()">&times;</span>
+    <div id="detailsModal" class="modal-backdrop">
+        <div class="modal-content">
+            <button class="modal-close" onclick="fermerModal()">&times;</button>
             <h2 id="modalTitle">Détails de la demande</h2>
             <div id="modalContent">
                 <!-- Contenu chargé dynamiquement -->
@@ -661,7 +725,7 @@ function traduireNiveau($niveau) {
             
             document.getElementById('modalTitle').textContent = 'Détails de la demande Bulgarie';
             document.getElementById('modalContent').innerHTML = details;
-            document.getElementById('detailsModal').style.display = 'block';
+            document.getElementById('detailsModal').style.display = 'flex';
         }
 
         // Fonction pour fermer la modal
@@ -669,13 +733,19 @@ function traduireNiveau($niveau) {
             document.getElementById('detailsModal').style.display = 'none';
         }
 
-        // Fermer la modal en cliquant à l'extérieur
-        window.onclick = function(event) {
-            const modal = document.getElementById('detailsModal');
-            if (event.target === modal) {
+        // Fermer la modal en appuyant sur Echap
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
                 fermerModal();
             }
-        }
+        });
+
+        // Fermer la modal en cliquant à l'extérieur
+        document.getElementById('detailsModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                fermerModal();
+            }
+        });
     </script>
 </body>
 </html>

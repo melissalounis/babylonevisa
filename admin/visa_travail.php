@@ -7,10 +7,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit();
 }
 
-$host = "localhost";
-$dbname = "babylone_service";
-$username = "root";
-$password = "";
+require_once '../config.php';
 
 // Initialiser les variables AVANT le try-catch
 $demandes = [];
@@ -22,9 +19,7 @@ $rejete = 0;
 $en_cours = 0;
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
+    
     // Récupérer toutes les demandes
     $sql = "SELECT d.*, u.email as user_email, u.nom as user_nom 
             FROM demandes_visa_travail d 

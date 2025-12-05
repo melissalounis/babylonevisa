@@ -8,18 +8,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit();
 }
 
-// Connexion à la base de données babylone_service
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Erreur de connexion : " . $e->getMessage());
-}
+require_once '../config.php';
 
 // Traitement des actions (statut, suppression)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

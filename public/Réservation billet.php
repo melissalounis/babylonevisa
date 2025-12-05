@@ -4,17 +4,14 @@ session_start();
 
 // Vérifier si l'utilisateur est connecté
 if (!isset($_SESSION['user_email'])) {
-    header('Location: login.php');
+    header('Location: client/login.php');
     exit();
 }
 
 $user_email = $_SESSION['user_email'];
 
-// Configuration de la base de données
-$db_host = 'localhost';
-$db_name = 'babylone_service';
-$db_user = 'root';
-$db_pass = '';
+// Inclusion de la configuration de la base de données
+include '../config.php';
 
 // Initialiser les variables pour éviter les erreurs
 $email_contact = $telephone_contact = $pays_depart = $ville_depart = $pays_arrivee = $ville_arrivee = $date_depart = $date_retour = $compagnie_preferee = $commentaires = '';
@@ -131,11 +128,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Génération d'un numéro de dossier
         $numero_dossier = "BILLET" . date('YmdHis') . rand(100, 999);
         
-        // Connexion à la base de données
+        // Connexion à la base de données via config.php
         try {
             $pdo = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
-            // CORRECTION : Utiliser la valeur numérique 2 au lieu de la constante
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, 2); // 2 = PDO::ERRMODE_EXCEPTION
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             
             // Commencer la transaction
             $pdo->beginTransaction();

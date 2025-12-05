@@ -9,7 +9,7 @@ header('X-XSS-Protection: 1; mode=block');
 // Vérifier le token CSRF
 if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
     $_SESSION['error_message'] = "Erreur de sécurité. Veuillez réessayer.";
-    header('Location: index.php');
+    header('Location: etude.php');
     exit;
 }
 

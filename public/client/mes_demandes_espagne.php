@@ -7,11 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Paramètres de connexion
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
-
+require_once __DIR__ . '../../../config.php';
 // Initialiser les variables
 $demandes_espagne = [];
 $error_message = null;
@@ -20,9 +16,7 @@ $user_info = ['email' => 'Utilisateur', 'nom' => 'Utilisateur'];
 
 try {
     // Connexion à la base de données
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+  
 
     // Récupérer les informations de l'utilisateur depuis la table users
     $user_id = $_SESSION['user_id'];

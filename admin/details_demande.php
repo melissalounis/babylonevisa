@@ -1,18 +1,7 @@
 <?php
 // Fichier: details_demande.php
 
-// Connexion à la base de données
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "babylone_service";
-
-try {
-    $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    die("Erreur de connexion: " . $e->getMessage());
-}
+include '../config.php';
 
 // Récupérer l'ID de la demande
 $demande_id = $_GET['id'] ?? null;

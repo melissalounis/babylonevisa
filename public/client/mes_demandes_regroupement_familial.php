@@ -20,75 +20,34 @@ if (isset($_GET['success']) && $_GET['success'] == '1' && isset($_GET['dossier']
 // Connexion à la base de données
 $db_success = false;
 $demandes = [];
+$conn = null;
 
 try {
-    $conn = new mysqli('localhost', 'root', '', 'babylone_service');
+    require_once __DIR__ . '../../../config.php';
     
-    if ($conn->connect_error) {
-        throw new Exception("Connection failed: " . $conn->connect_error);
-    }
-    
-    $db_success = true;
-    
-    // Vérifier si la table existe, sinon la créer
-    $table_check = $conn->query("SHOW TABLES LIKE 'demandes_regroupement_familial'");
-    if ($table_check->num_rows == 0) {
-        // Créer la table si elle n'existe pas
-        $create_table = "CREATE TABLE demandes_regroupement_familial (
-            id INT PRIMARY KEY AUTO_INCREMENT,
-            user_id INT NOT NULL,
-            numero_dossier VARCHAR(50) UNIQUE NOT NULL,
-            nom_complet VARCHAR(255) NOT NULL,
-            date_naissance DATE NOT NULL,
-            nationalite VARCHAR(100) NOT NULL,
-            email VARCHAR(255) NOT NULL,
-            telephone VARCHAR(50) NOT NULL,
-            nom_famille VARCHAR(255) NOT NULL,
-            lien_parente ENUM('conjoint', 'enfant', 'parent', 'autre') NOT NULL,
-            adresse_famille TEXT NOT NULL,
-            commentaire TEXT,
-            statut ENUM('nouveau', 'en_cours', 'confirme', 'refuse', 'complet') DEFAULT 'nouveau',
-            date_creation DATETIME DEFAULT CURRENT_TIMESTAMP
-        )";
+    // Vérifier si la connexion est établie
+    if ($conn && $conn->connect_error === null) {
+        $db_success = true;
         
-        if (!$conn->query($create_table)) {
-            throw new Exception("Erreur création table: " . $conn->error);
-        }
-    }
-    
-    // Récupérer les demandes de regroupement familial de l'utilisateur
-    $sql = "SELECT * FROM demandes_regroupement_familial WHERE user_id = ? ORDER BY date_creation DESC";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $user_id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $demandes = $result->fetch_all(MYSQLI_ASSOC);
-    $stmt->close();
-    
-    // Si l'email n'est pas en session, le récupérer depuis la base users
-    if ($user_email === 'Non spécifié') {
-        $user_check = $conn->query("SHOW TABLES LIKE 'users'");
-        if ($user_check->num_rows > 0) {
-            $sql_user = "SELECT email FROM users WHERE id = ?";
-            $stmt_user = $conn->prepare($sql_user);
-            $stmt_user->bind_param("i", $user_id);
-            $stmt_user->execute();
-            $user_result = $stmt_user->get_result();
-            $user_data = $user_result->fetch_assoc();
-            $stmt_user->close();
+        // Récupérer les demandes de regroupement familial de l'utilisateur
+        $sql = "SELECT * FROM demandes_regroupement_familial WHERE user_id = ? ORDER BY date_creation DESC";
+        $stmt = $conn->prepare($sql);
+        
+        if ($stmt) {
+            $stmt->bind_param("i", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
             
-            if ($user_data && isset($user_data['email'])) {
-                $user_email = $user_data['email'];
-                $_SESSION['user_email'] = $user_email;
+            if ($result) {
+                $demandes = $result->fetch_all(MYSQLI_ASSOC);
             }
+            
+            $stmt->close();
         }
     }
-    
-    $conn->close();
-    
 } catch (Exception $e) {
-    error_log("Erreur DB: " . $e->getMessage());
     $db_success = false;
+    error_log("Erreur de connexion à la base de données: " . $e->getMessage());
 }
 ?>
 <!DOCTYPE html>
@@ -445,9 +404,9 @@ try {
                             <div class="demande-header">
                                 <div class="demande-numero">
                                     <i class="fa-solid fa-file-contract"></i>
-                                    <?php echo htmlspecialchars($demande['numero_dossier']); ?>
+                                    <?php echo htmlspecialchars($demande['numero_dossier'] ?? 'N/A'); ?>
                                 </div>
-                                <div class="statut statut-<?php echo $demande['statut']; ?>">
+                                <div class="statut statut-<?php echo $demande['statut'] ?? 'nouveau'; ?>">
                                     <?php 
                                     $statuts = [
                                         'nouveau' => '🆕 Nouveau',
@@ -456,7 +415,7 @@ try {
                                         'refuse' => '❌ Refusé',
                                         'complet' => '📋 Complet'
                                     ];
-                                    echo $statuts[$demande['statut']] ?? $demande['statut'];
+                                    echo $statuts[$demande['statut'] ?? 'nouveau'] ?? $demande['statut'] ?? 'Nouveau';
                                     ?>
                                 </div>
                             </div>
@@ -465,13 +424,13 @@ try {
                                 <div class="info-item">
                                     <i class="fa-solid fa-user"></i>
                                     <span><strong>Demandeur :</strong> 
-                                        <?php echo htmlspecialchars($demande['nom_complet']); ?>
+                                        <?php echo htmlspecialchars($demande['nom_complet'] ?? 'Non spécifié'); ?>
                                     </span>
                                 </div>
                                 <div class="info-item">
                                     <i class="fa-solid fa-flag"></i>
                                     <span><strong>Nationalité :</strong> 
-                                        <?php echo htmlspecialchars($demande['nationalite']); ?>
+                                        <?php echo htmlspecialchars($demande['nationalite'] ?? 'Non spécifiée'); ?>
                                     </span>
                                 </div>
                                 <div class="info-item">
@@ -484,25 +443,27 @@ try {
                                             'parent' => 'Parent',
                                             'autre' => 'Autre'
                                         ];
-                                        echo $liens[$demande['lien_parente']] ?? $demande['lien_parente'];
+                                        echo $liens[$demande['lien_parente'] ?? 'autre'] ?? $demande['lien_parente'] ?? 'Non spécifié';
                                         ?>
                                     </span>
                                 </div>
                                 <div class="info-item">
                                     <i class="fa-solid fa-calendar-day"></i>
                                     <span><strong>Date de création :</strong> 
-                                        <?php echo date('d/m/Y à H:i', strtotime($demande['date_creation'])); ?>
+                                        <?php echo isset($demande['date_creation']) ? date('d/m/Y à H:i', strtotime($demande['date_creation'])) : 'Date inconnue'; ?>
                                     </span>
                                 </div>
                             </div>
 
                             <!-- Informations supplémentaires -->
+                            <?php if (!empty($demande['nom_famille'])): ?>
                             <div class="info-item" style="margin-bottom: 15px;">
                                 <i class="fa-solid fa-house-user"></i>
                                 <span><strong>Membre de famille en France :</strong> 
                                     <?php echo htmlspecialchars($demande['nom_famille']); ?>
                                 </span>
                             </div>
+                            <?php endif; ?>
 
                             <?php if (!empty($demande['adresse_famille'])): ?>
                             <div class="info-item" style="margin-bottom: 15px;">
@@ -541,14 +502,14 @@ try {
                             <?php endif; ?>
 
                             <div class="actions">
-                                <button class="btn" onclick="afficherDetails(<?php echo $demande['id']; ?>)">
+                                <button class="btn" onclick="afficherDetails(<?php echo $demande['id'] ?? 0; ?>)">
                                     <i class="fa-solid fa-eye"></i> Voir détails complets
                                 </button>
-                                <button class="btn" onclick="contacterAssistance('<?php echo htmlspecialchars($demande['numero_dossier']); ?>')">
+                                <button class="btn" onclick="contacterAssistance('<?php echo htmlspecialchars($demande['numero_dossier'] ?? 'N/A'); ?>')">
                                     <i class="fa-solid fa-envelope"></i> Contacter l'assistance
                                 </button>
-                                <?php if ($demande['statut'] == 'nouveau'): ?>
-                                    <button class="btn" style="background: var(--accent-red);" onclick="annulerDemande(<?php echo $demande['id']; ?>)">
+                                <?php if (($demande['statut'] ?? '') == 'nouveau'): ?>
+                                    <button class="btn" style="background: var(--accent-red);" onclick="annulerDemande(<?php echo $demande['id'] ?? 0; ?>)">
                                         <i class="fa-solid fa-times"></i> Annuler la demande
                                     </button>
                                 <?php endif; ?>

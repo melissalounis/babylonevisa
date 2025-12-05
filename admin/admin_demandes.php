@@ -8,7 +8,7 @@ if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
 }
 
 // Connexion DB
-$pdo = new PDO("mysql:host=127.0.0.1;dbname=babylone_service", "root", "");
+include '../config.php';
 
 // Récupérer toutes les demandes
 $stmt = $pdo->query("SELECT * FROM attestation_province ORDER BY date_soumission DESC");

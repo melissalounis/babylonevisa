@@ -360,89 +360,89 @@ include __DIR__ . '/../../includes/header.php';
 <!-- PAYS -->
     <h2 class="section-title">Destinations populaires</h2>
     <div class="countries">
-        <a href="travail.php" class="country" style="background-image:url('images/france.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image:url('../../public/images/france.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/fr.png" alt="Drapeau France">
                 <span>France</span>
             </div>
         </a>
 
-        <a href="travail.php" class="country" style="background-image: url('images/canada.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/canada.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/ca.png" alt="Drapeau Canada">
                 <span>Canada</span>
             </div>
         </a>
 
-        <a href="travail.php" class="country" style="background-image: url('images/espagne.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/espagne.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/es.png" alt="Drapeau Espagne">
                 <span>Espagne</span>
             </div>
         </a>
         
-        <a href="travail.php" class="country" style="background-image: url('images/bulgarie.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/bulgarie.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/bg.png" alt="Drapeau Bulgarie">
                 <span>Bulgarie</span>
             </div>
         </a>
 
-        <a href="travail.php" class="country" style="background-image: url('images/turquie.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/turquie.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/tr.png" alt="Drapeau Turquie">
                 <span>Turquie</span>
             </div>
         </a>
 
-        <a href="travail.php" class="country" style="background-image: url('images/italie.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/italie.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/it.png" alt="Drapeau Italie">
                 <span>Italie</span>
             </div>
         </a>
 
-        <a href="travail.php" class="country" style="background-image: url('images/usa.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/usa.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/us.png" alt="Drapeau USA">
                 <span>USA</span>
             </div>
         </a>
         
-        <a href="travail.php" class="country" style="background-image: url('images/allemagne.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/allemagne.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/de.png" alt="Drapeau Allemagne">
                 <span>Allemagne</span>
             </div>
         </a>
         
-        <a href="travail.php" class="country" style="background-image: url('images/istonie.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/istonie.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/ee.png" alt="Drapeau Estonie">
                 <span>Estonie</span>
             </div>
         </a>
         
-        <a href="travail.php" class="country" style="background-image: url('images/malte.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/malte.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/mt.png" alt="Drapeau Malte">
                 <span>Malte</span>
             </div>
         </a>
         
-        <a href="travail.php" class="country" style="background-image: url('images/pologne.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/pologne.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/pl.png" alt="Drapeau Pologne">
                 <span>Pologne</span>
             </div>
         </a>
-         <a href="travail.php" class="country" style="background-image: url('images/hongrie.jpg');">
+         <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/hongrie.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/hn.png" alt="Drapeau hongrie">
                 <span>Hongrie</span>
             </div>
         </a>
-        <a href="travail.php" class="country" style="background-image: url('images/holande.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/holande.jpg');">
     <div class="country-label">
         <img class="flag-icon" src="https://flagcdn.com/w40/nl.png" alt="Drapeau des Pays-Bas">
         <span>Pays-Bas</span>
@@ -450,49 +450,49 @@ include __DIR__ . '/../../includes/header.php';
 </a>
 
         
-        <a href="travail.php" class="country" style="background-image: url('images/belgique.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/belgique.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/be.png" alt="Drapeau Belgique">
                 <span>Belgique</span>
             </div>
         </a>
          
-        <a href="travail.php" class="country" style="background-image: url('images/roumanie.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/roumanie.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/ro.png" alt="Drapeau Roumanie">
                 <span>Roumanie</span>
             </div>
         </a>
          
-        <a href="travail.php" class="country" style="background-image: url('images/portugal.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/portugal.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/pt.png" alt="Drapeau Portugal">
                 <span>Portugal</span>
             </div>
         </a>
          
-        <a href="travail.php" class="country" style="background-image: url('images/uk.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/uk.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/gb.png" alt="Drapeau Royaume-Uni">
                 <span>Royaume-Uni</span>
             </div>
         </a>
         
-        <a href="travail.php" class="country" style="background-image: url('images/irlande.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/irlande.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/ie.png" alt="Drapeau Irlande">
                 <span>Irlande</span>
             </div>
         </a>
        
-        <a href="travail.php" class="country" style="background-image: url('images/luxembourg.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/luxembourg.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/lu.png" alt="Drapeau Luxembourg">
                 <span>Luxembourg</span>
             </div>
         </a>
         
-        <a href="travail.php" class="country" style="background-image: url('images/suisse.jpg');">
+        <a href="../../public/travail/travail.php" class="country" style="background-image: url('../../public/images/suisse.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/ch.png" alt="Drapeau Suisse">
                 <span>Suisse</span>

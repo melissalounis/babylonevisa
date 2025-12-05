@@ -10,17 +10,13 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 
 // Connexion BDD
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
+require_once __DIR__ . '../../../config.php';
 
 $erreurs = [];
 $success = false;
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
 
     // Récupérer les demandes de l'utilisateur pour afficher les références
     $stmt = $pdo->prepare("

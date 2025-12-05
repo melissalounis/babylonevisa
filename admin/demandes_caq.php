@@ -8,25 +8,9 @@ if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
     exit();
 }
 
-// Configuration de la base de données
-define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'babylone_service');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_CHARSET', 'utf8mb4');
+// Inclure config.php et vérifier la connexion
+require_once '../config.php';
 
-// Connexion à la base de données
-try {
-    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-    $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-    ];
-    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-} catch (PDOException $e) {
-    die("Erreur de connexion à la base de données : " . $e->getMessage());
-}
 
 // Variables pour la pagination et la recherche
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -56,88 +40,125 @@ if (!empty($where_conditions)) {
     $where_sql = 'WHERE ' . implode(' AND ', $where_conditions);
 }
 
-// Requête pour le nombre total d'enregistrements
-$count_sql = "SELECT COUNT(*) as total FROM demandes_caq $where_sql";
-$stmt = $pdo->prepare($count_sql);
-$stmt->execute($params);
-$total_records = $stmt->fetch()['total'];
-$total_pages = ceil($total_records / $limit);
+// Initialiser les variables
+$total_records = 0;
+$total_pages = 0;
+$demandes = [];
+$stats = [
+    'total' => 0,
+    'nouveaux' => 0,
+    'en_cours' => 0,
+    'approuves' => 0,
+    'rejetes' => 0
+];
 
-// Requête pour les données
-$sql = "SELECT * FROM demandes_caq 
-        $where_sql 
-        ORDER BY $order_by $order_dir 
-        LIMIT :limit OFFSET :offset";
+try {
+    // Requête pour le nombre total d'enregistrements
+    $count_sql = "SELECT COUNT(*) as total FROM demandes_caq $where_sql";
+    $stmt = $pdo->prepare($count_sql);
+    $stmt->execute($params);
+    $count_result = $stmt->fetch();
+    $total_records = $count_result ? $count_result['total'] : 0;
+    $total_pages = ceil($total_records / $limit);
 
-$stmt = $pdo->prepare($sql);
-foreach ($params as $key => $value) {
-    $stmt->bindValue($key, $value);
+    // Requête pour les données
+    if ($total_records > 0) {
+        $sql = "SELECT * FROM demandes_caq 
+                $where_sql 
+                ORDER BY $order_by $order_dir 
+                LIMIT :limit OFFSET :offset";
+
+        $stmt = $pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        $demandes = $stmt->fetchAll();
+    }
+
+    // Récupérer les statistiques
+    $stats_sql = "SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN statut = 'nouveau' THEN 1 ELSE 0 END) as nouveaux,
+        SUM(CASE WHEN statut = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
+        SUM(CASE WHEN statut = 'approuve' THEN 1 ELSE 0 END) as approuves,
+        SUM(CASE WHEN statut = 'rejete' THEN 1 ELSE 0 END) as rejetes
+        FROM demandes_caq";
+
+    $stats_result = $pdo->query($stats_sql)->fetch();
+    if ($stats_result) {
+        $stats = [
+            'total' => $stats_result['total'] ?? 0,
+            'nouveaux' => $stats_result['nouveaux'] ?? 0,
+            'en_cours' => $stats_result['en_cours'] ?? 0,
+            'approuves' => $stats_result['approuves'] ?? 0,
+            'rejetes' => $stats_result['rejetes'] ?? 0
+        ];
+    }
+
+} catch (PDOException $e) {
+    $error_message = "Erreur base de données: " . $e->getMessage();
+    error_log($error_message);
 }
-$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-$stmt->execute();
-$demandes = $stmt->fetchAll();
 
 // Traitement des actions (changement de statut, suppression)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && isset($_POST['id'])) {
         $id = (int)$_POST['id'];
         
-        switch ($_POST['action']) {
-            case 'changer_statut':
-                $nouveau_statut = $_POST['nouveau_statut'];
-                $sql = "UPDATE demandes_caq SET statut = ? WHERE id = ?";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$nouveau_statut, $id]);
-                $_SESSION['message'] = "Statut mis à jour avec succès";
-                break;
-                
-            case 'supprimer':
-                // Récupérer les chemins des fichiers avant suppression
-                $sql = "SELECT passeport_path, preuve_fonds_path, lettre_acceptation_path FROM demandes_caq WHERE id = ?";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$id]);
-                $fichiers = $stmt->fetch();
-                
-                // Supprimer les fichiers physiques
-                $dossier_upload = "uploads/caq/";
-                foreach ($fichiers as $chemin_json) {
-                    if ($chemin_json) {
-                        $fichiers_array = json_decode($chemin_json, true);
-                        if (is_array($fichiers_array)) {
-                            foreach ($fichiers_array as $fichier) {
-                                $chemin_complet = $dossier_upload . $fichier;
-                                if (file_exists($chemin_complet)) {
-                                    unlink($chemin_complet);
+        try {
+            switch ($_POST['action']) {
+                case 'changer_statut':
+                    $nouveau_statut = $_POST['nouveau_statut'];
+                    $sql = "UPDATE demandes_caq SET statut = ? WHERE id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([$nouveau_statut, $id]);
+                    $_SESSION['message'] = "Statut mis à jour avec succès";
+                    break;
+                    
+                case 'supprimer':
+                    // Récupérer les chemins des fichiers avant suppression
+                    $sql = "SELECT passeport_path, preuve_fonds_path, lettre_acceptation_path FROM demandes_caq WHERE id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([$id]);
+                    $fichiers = $stmt->fetch();
+                    
+                    // Supprimer les fichiers physiques
+                    $dossier_upload = "uploads/caq/";
+                    foreach ($fichiers as $chemin_json) {
+                        if ($chemin_json) {
+                            $fichiers_array = json_decode($chemin_json, true);
+                            if (is_array($fichiers_array)) {
+                                foreach ($fichiers_array as $fichier) {
+                                    $chemin_complet = $dossier_upload . $fichier;
+                                    if (file_exists($chemin_complet)) {
+                                        unlink($chemin_complet);
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                
-                // Supprimer de la base de données
-                $sql = "DELETE FROM demandes_caq WHERE id = ?";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$id]);
-                $_SESSION['message'] = "Demande supprimée avec succès";
-                break;
+                    
+                    // Supprimer de la base de données
+                    $sql = "DELETE FROM demandes_caq WHERE id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([$id]);
+                    $_SESSION['message'] = "Demande supprimée avec succès";
+                    break;
+            }
+            
+            header("Location: admin_demandes_caq.php");
+            exit();
+            
+        } catch (PDOException $e) {
+            $_SESSION['error'] = "Erreur lors de l'opération: " . $e->getMessage();
+            header("Location: admin_demandes_caq.php");
+            exit();
         }
-        
-        header("Location: admin_demandes_caq.php");
-        exit();
     }
 }
-
-// Récupérer les statistiques
-$stats_sql = "SELECT 
-    COUNT(*) as total,
-    SUM(CASE WHEN statut = 'nouveau' THEN 1 ELSE 0 END) as nouveaux,
-    SUM(CASE WHEN statut = 'en_cours' THEN 1 ELSE 0 END) as en_cours,
-    SUM(CASE WHEN statut = 'approuve' THEN 1 ELSE 0 END) as approuves,
-    SUM(CASE WHEN statut = 'rejete' THEN 1 ELSE 0 END) as rejetes
-    FROM demandes_caq";
-
-$stats = $pdo->query($stats_sql)->fetch();
 ?>
 
 <!DOCTYPE html>
@@ -407,6 +428,18 @@ $stats = $pdo->query($stats_sql)->fetch();
             border-left-color: var(--success);
         }
         
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left-color: var(--danger);
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left-color: #17a2b8;
+        }
+        
         .modal {
             display: none;
             position: fixed;
@@ -425,6 +458,12 @@ $stats = $pdo->query($stats_sql)->fetch();
             border-radius: 10px;
             max-width: 500px;
             position: relative;
+        }
+        
+        .modal-content.large {
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         
         .close {
@@ -450,6 +489,104 @@ $stats = $pdo->query($stats_sql)->fetch();
         .file-link:hover {
             text-decoration: underline;
         }
+        
+        /* Styles pour la modal des détails */
+        .detail-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .detail-section h4 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .detail-item {
+            margin-bottom: 10px;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 3px;
+        }
+        
+        .detail-value {
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .file-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .file-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .file-icon {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .file-name {
+            font-size: 0.9rem;
+            word-break: break-all;
+            margin-bottom: 10px;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+        
+        .download-btn:hover {
+            background: var(--secondary);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .loading i {
+            color: var(--primary);
+        }
     </style>
 </head>
 <body>
@@ -462,7 +599,7 @@ $stats = $pdo->query($stats_sql)->fetch();
             </div>
             <ul class="nav-links">
                 <li><a href="admin_dashboard.php" class="active"><i class="fas fa-tachometer-alt"></i> Tableau de bord</a></li>
-                <li><a href="admin_demandes_caq.php"><i class="fas fa-file-alt"></i> Demandes CAQ</a></li>
+                <li><a href="demandes_caq.php"><i class="fas fa-file-alt"></i> Demandes CAQ</a></li>
                 <li><a href="#"><i class="fas fa-users"></i> Utilisateurs</a></li>
                 <li><a href="#"><i class="fas fa-chart-bar"></i> Statistiques</a></li>
                 <li><a href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
@@ -480,6 +617,18 @@ $stats = $pdo->query($stats_sql)->fetch();
             <?php if (isset($_SESSION['message'])): ?>
                 <div class="alert alert-success">
                     <i class="fas fa-check-circle"></i> <?php echo $_SESSION['message']; unset($_SESSION['message']); ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-circle"></i> <?php echo $_SESSION['error']; unset($_SESSION['error']); ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if (isset($error_message)): ?>
+                <div class="alert alert-error">
+                    <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($error_message); ?>
                 </div>
             <?php endif; ?>
 
@@ -544,7 +693,7 @@ $stats = $pdo->query($stats_sql)->fetch();
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-filter"></i> Filtrer
                         </button>
-                        <a href="admin_demandes_caq.php" class="btn" style="background: #6c757d; color: white;">
+                        <a href="demandes_caq.php" class="btn" style="background: #6c757d; color: white;">
                             <i class="fas fa-redo"></i> Réinitialiser
                         </a>
                     </div>
@@ -620,6 +769,11 @@ $stats = $pdo->query($stats_sql)->fetch();
                                     <td><?php echo date('d/m/Y H:i', strtotime($demande['date_soumission'])); ?></td>
                                     <td>
                                         <div class="action-buttons">
+                                            <!-- Bouton Voir détails -->
+                                            <button class="btn btn-sm btn-info" onclick="showDemandeDetails(<?php echo $demande['id']; ?>)">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            
                                             <!-- Bouton Modifier statut -->
                                             <button class="btn btn-sm btn-warning" onclick="openModal(<?php echo $demande['id']; ?>, '<?php echo $demande['statut']; ?>')">
                                                 <i class="fas fa-edit"></i>
@@ -703,6 +857,20 @@ $stats = $pdo->query($stats_sql)->fetch();
         </div>
     </div>
 
+    <!-- Modal pour afficher les détails -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content large">
+            <span class="close" onclick="closeDetailModal()">&times;</span>
+            <h3><i class="fas fa-file-alt"></i> Détails complets de la demande</h3>
+            <div id="detailContent" style="margin-top: 20px;">
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p style="margin-top: 10px;">Chargement des détails...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         function openModal(id, statutActuel) {
             document.getElementById('modalDemandeId').value = id;
@@ -714,11 +882,46 @@ $stats = $pdo->query($stats_sql)->fetch();
             document.getElementById('modalStatut').style.display = 'none';
         }
         
-        // Fermer la modal en cliquant en dehors
+        function showDemandeDetails(id) {
+            document.getElementById('detailModal').style.display = 'block';
+            
+            // Afficher le chargement
+            document.getElementById('detailContent').innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p style="margin-top: 10px;">Chargement des détails...</p>
+                </div>
+            `;
+            
+            // Requête AJAX pour récupérer les détails
+            fetch('get_demande_details_caq.php?id=' + id)
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('detailContent').innerHTML = data;
+                })
+                .catch(error => {
+                    document.getElementById('detailContent').innerHTML = `
+                        <div class="alert alert-error" style="margin: 20px;">
+                            <i class="fas fa-exclamation-circle"></i> Erreur lors du chargement des détails
+                        </div>
+                    `;
+                });
+        }
+        
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
+        }
+        
+        // Fermer les modals en cliquant en dehors
         window.onclick = function(event) {
-            const modal = document.getElementById('modalStatut');
-            if (event.target === modal) {
+            const modalStatut = document.getElementById('modalStatut');
+            const modalDetail = document.getElementById('detailModal');
+            
+            if (event.target === modalStatut) {
                 closeModal();
+            }
+            if (event.target === modalDetail) {
+                closeDetailModal();
             }
         }
     </script>

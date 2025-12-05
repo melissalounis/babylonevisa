@@ -18,14 +18,10 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $rendez_vous_id = $_GET['id'];
 
 // Connexion à la base de données
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
+require_once __DIR__ . '../../../config.php';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+   
 
     // D'abord, récupérer l'email de l'utilisateur
     $user_stmt = $pdo->prepare("SELECT email FROM users WHERE id = ?");

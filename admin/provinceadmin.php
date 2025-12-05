@@ -9,10 +9,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 }
 
 // Configuration de la base de données (identique au dashboard)
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
+require_once '../config.php';
 
 // Initialisation des variables
 $erreurs = [];
@@ -20,16 +17,7 @@ $pdo = null;
 $demandes = [];
 $statistiques = [];
 
-// Connexion à la base de données
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false
-    ]);
-} catch (PDOException $e) {
-    $erreurs[] = "Erreur de connexion à la base de données : " . $e->getMessage();
-}
+
 
 // Traitement des actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $pdo) {

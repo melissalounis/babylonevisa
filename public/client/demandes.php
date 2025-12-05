@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '../../../config.php';
 $page_title = "Dashboard Client - Babylone Service";
 
 // Récupération des informations utilisateur (exemple)

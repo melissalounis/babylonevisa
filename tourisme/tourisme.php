@@ -1,229 +1,534 @@
 <?php
-session_start();
+// Ne pas démarrer la session si elle est déjà active
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Configuration d'erreurs
+// Configuration d'erreurs (désactiver en production)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Connexion BDD
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
+// 🔹 Vérifier si l'utilisateur est connecté
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// 🔹 Généner un token CSRF si non existant
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// 🔹 Connexion BDD
+require_once __DIR__ . '../../config.php';
 
-        // 🔹 Fonction de validation des entrées
-        function validateInput($data) {
-            if (empty($data)) return '';
-            $data = trim($data);
-            $data = stripslashes($data);
-            $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
-            return $data;
-        }
+// 🔹 Utiliser la constante existante ou définir une valeur par défaut
+if (!defined('MAX_FILE_SIZE')) {
+    define('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB
+}
 
-        // 🔹 Fonction sécurisée pour l'upload des fichiers
-        function saveFile($file, $type, $demande_id, $pdo, $uploadDir) {
-            if (!empty($file['name']) && $file['error'] === UPLOAD_ERR_OK) {
-                
-                // Validation du type MIME
-                $allowed_types = [
-                    'image/jpeg' => 'jpg',
-                    'image/png' => 'png', 
-                    'image/jpg' => 'jpg',
-                    'application/pdf' => 'pdf'
-                ];
-                
-                $finfo = finfo_open(FILEINFO_MIME_TYPE);
-                $mime_type = finfo_file($finfo, $file['tmp_name']);
-                finfo_close($finfo);
-                
-                if (!array_key_exists($mime_type, $allowed_types)) {
-                    throw new Exception("Type de fichier non autorisé: " . $mime_type);
-                }
-                
-                // Limite de taille (5MB)
-                if ($file['size'] > 5 * 1024 * 1024) {
-                    throw new Exception("Fichier trop volumineux (max 5MB): " . $file['name']);
-                }
-                
-                // Nom de fichier sécurisé
-                $extension = $allowed_types[$mime_type];
-                $filename = uniqid() . "_" . md5(basename($file['name'])) . "." . $extension;
-                $filepath = $uploadDir . $filename;
-                
-                if (move_uploaded_file($file['tmp_name'], $filepath)) {
-                    $stmt = $pdo->prepare("INSERT INTO demandes_court_sejour_fichiers 
-                        (demande_id, type_fichier, chemin_fichier, date_upload) 
-                        VALUES (?, ?, ?, NOW())");
-                    $stmt->execute([$demande_id, $type, $filename]);
-                    return true;
-                }
-            }
-            return false;
-        }
+if (!defined('MAX_REQUESTS_PER_DAY')) {
+    define('MAX_REQUESTS_PER_DAY', 5);
+}
 
-        // 🔹 Champs obligatoires
+// 🔹 Vérifier si ALLOWED_MIME_TYPES est déjà défini
+if (!defined('ALLOWED_MIME_TYPES')) {
+    define('ALLOWED_MIME_TYPES', [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/jpg' => 'jpg',
+        'application/pdf' => 'pdf'
+    ]);
+}
+
+// 🔹 Classes de validation
+class VisaFormValidator {
+    private $errors = [];
+    private $data = [];
+    
+    public function __construct(array $data) {
+        $this->data = $data;
+    }
+    
+    public function validate(): bool {
+        $this->validateRequired();
+        $this->validateEmail();
+        $this->validateDates();
+        $this->validatePhone();
+        $this->validatePassport();
+        
+        return empty($this->errors);
+    }
+    
+    private function validateRequired(): void {
         $required_fields = [
             'pays_destination', 'visa_type', 'nom', 'date_naissance', 'lieu_naissance',
             'etat_civil', 'nationalite', 'profession', 'adresse', 'telephone',
             'email', 'num_passeport', 'pays_delivrance', 'date_delivrance', 'date_expiration'
         ];
-
-        $errors = [];
+        
         foreach ($required_fields as $field) {
-            if (empty($_POST[$field])) {
-                $errors[] = "Le champ " . str_replace('_', ' ', $field) . " est obligatoire.";
+            if (empty($this->data[$field])) {
+                $this->errors[] = "Le champ " . str_replace('_', ' ', $field) . " est obligatoire.";
             }
         }
-
-        // 🔹 Validation email
-        $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
-        if (!$email) {
-            $errors[] = "Adresse email invalide.";
+    }
+    
+    private function validateEmail(): void {
+        if (!empty($this->data['email']) && !filter_var($this->data['email'], FILTER_VALIDATE_EMAIL)) {
+            $this->errors[] = "Adresse email invalide.";
         }
-
-        // 🔹 Validation des dates
-        $date_expiration = $_POST['date_expiration'] ?? '';
-        if ($date_expiration && strtotime($date_expiration) <= time()) {
-            $errors[] = "La date d'expiration du passeport doit être dans le futur.";
+        
+        if (!empty($this->data['email_hote']) && !filter_var($this->data['email_hote'], FILTER_VALIDATE_EMAIL)) {
+            $this->errors[] = "Adresse email de l'hôte invalide.";
         }
+    }
+    
+    private function validateDates(): void {
+        if (!empty($this->data['date_expiration']) && strtotime($this->data['date_expiration']) <= time()) {
+            $this->errors[] = "La date d'expiration du passeport doit être dans le futur.";
+        }
+        
+        if (!empty($this->data['date_naissance']) && strtotime($this->data['date_naissance']) >= time()) {
+            $this->errors[] = "La date de naissance doit être dans le passé.";
+        }
+        
+        if (!empty($this->data['date_delivrance']) && !empty($this->data['date_expiration'])) {
+            if (strtotime($this->data['date_delivrance']) >= strtotime($this->data['date_expiration'])) {
+                $this->errors[] = "La date de délivrance doit être antérieure à la date d'expiration.";
+            }
+        }
+    }
+    
+    private function validatePhone(): void {
+        if (!empty($this->data['telephone']) && !preg_match('/^[+]?[0-9\s\-\(\)]{10,20}$/', $this->data['telephone'])) {
+            $this->errors[] = "Numéro de téléphone invalide.";
+        }
+    }
+    
+    private function validatePassport(): void {
+        if (!empty($this->data['num_passeport']) && !preg_match('/^[A-Z0-9]{6,12}$/', $this->data['num_passeport'])) {
+            $this->errors[] = "Numéro de passeport invalide. Format attendu : 6-12 caractères alphanumériques.";
+        }
+    }
+    
+    public function getErrors(): array {
+        return $this->errors;
+    }
+    
+    public function getValidatedData(): array {
+        return $this->data;
+    }
+}
 
-        if (!empty($errors)) {
-            echo "<div class='alert alert-danger'>" . implode("<br>", $errors) . "</div>";
-        } else {
-            // 🔹 Récupération et validation des données
-            $pays_destination   = validateInput($_POST['pays_destination'] ?? '');
-            $visa_type          = validateInput($_POST['visa_type'] ?? '');
-            $nom                = validateInput($_POST['nom'] ?? '');
-            $date_naissance     = $_POST['date_naissance'] ?? '';
-            $lieu_naissance     = validateInput($_POST['lieu_naissance'] ?? '');
-            $etat_civil         = validateInput($_POST['etat_civil'] ?? '');
-            $nationalite        = validateInput($_POST['nationalite'] ?? '');
-            $profession         = validateInput($_POST['profession'] ?? '');
-            $adresse            = validateInput($_POST['adresse'] ?? '');
-            $telephone          = validateInput($_POST['telephone'] ?? '');
-            $email              = $email;
-            $num_passeport      = validateInput($_POST['num_passeport'] ?? '');
-            $pays_delivrance    = validateInput($_POST['pays_delivrance'] ?? '');
-            $date_delivrance    = $_POST['date_delivrance'] ?? '';
-            $date_expiration    = $date_expiration;
-            $a_deja_visa        = $_POST['a_deja_visa'] ?? 'non';
-            $nb_visas           = intval($_POST['nb_visas'] ?? 0);
-            $details_voyages    = validateInput($_POST['details_voyages'] ?? '');
-
-            // 🔹 Champs conditionnels pour hébergement
-            $nom_hote           = validateInput($_POST['nom_hote'] ?? null);
-            $adresse_hote       = validateInput($_POST['adresse_hote'] ?? null);
-            $telephone_hote     = validateInput($_POST['telephone_hote'] ?? null);
-            $email_hote         = filter_var($_POST['email_hote'] ?? null, FILTER_VALIDATE_EMAIL) ?: null;
-            $lien_parente       = validateInput($_POST['lien_parente'] ?? null);
-
-            $user_id = $_SESSION['user_id'] ?? 0;
-
-            // 🔹 Insertion dans `demandes_court_sejour`
-            $stmt = $pdo->prepare("INSERT INTO demandes_court_sejour 
-                (user_id, visa_type, pays_destination, nom_complet, date_naissance, lieu_naissance, etat_civil, 
-                nationalite, profession, adresse, telephone, email, passeport, pays_delivrance, date_delivrance, 
-                date_expiration, a_deja_visa, nb_visas, details_voyages, nom_hote, adresse_hote, telephone_hote, 
-                email_hote, lien_parente, statut, date_demande) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'en_attente', NOW())");
+class FileUploader {
+    private $pdo;
+    private $uploadDir;
+    private $errors = [];
+    
+    public function __construct(PDO $pdo, string $uploadDir) {
+        $this->pdo = $pdo;
+        $this->uploadDir = $uploadDir;
+        $this->ensureUploadDir();
+    }
+    
+    private function ensureUploadDir(): void {
+        if (!is_dir($this->uploadDir)) {
+            mkdir($this->uploadDir, 0755, true);
+        }
+        
+        // Ajouter un fichier .htaccess pour sécuriser le dossier
+        $htaccess = $this->uploadDir . '.htaccess';
+        if (!file_exists($htaccess)) {
+            file_put_contents($htaccess, "Order deny,allow\nDeny from all\n<FilesMatch '\.(jpg|jpeg|png|pdf)$'>\nAllow from all\n</FilesMatch>");
+        }
+        
+        // Ajouter un fichier index.html vide pour éviter le listing
+        $indexFile = $this->uploadDir . 'index.html';
+        if (!file_exists($indexFile)) {
+            file_put_contents($indexFile, '<!-- Directory listing disabled -->');
+        }
+    }
+    
+    public function validateFile(array $file): bool {
+        // Vérifier les erreurs d'upload
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $this->errors[] = "Erreur lors de l'upload du fichier : " . $this->getUploadError($file['error']);
+            return false;
+        }
+        
+        // Vérifier la taille
+        if ($file['size'] > MAX_FILE_SIZE) {
+            $this->errors[] = "Fichier trop volumineux (max " . (MAX_FILE_SIZE / 1024 / 1024) . "MB) : " . $file['name'];
+            return false;
+        }
+        
+        // Vérifier le type MIME
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime_type = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        
+        $allowed_types = defined('ALLOWED_MIME_TYPES') ? ALLOWED_MIME_TYPES : [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/jpg' => 'jpg',
+            'application/pdf' => 'pdf'
+        ];
+        
+        if (!array_key_exists($mime_type, $allowed_types)) {
+            $this->errors[] = "Type de fichier non autorisé : " . $mime_type;
+            return false;
+        }
+        
+        // Vérifier les extensions dangereuses
+        $filename = $file['name'];
+        if (preg_match('/\.(php|phtml|phar|exe|js|html|htm|asp|aspx)$/i', $filename)) {
+            $this->errors[] = "Extension de fichier dangereuse détectée.";
+            return false;
+        }
+        
+        return true;
+    }
+    
+    public function saveFile(array $file, string $type, int $demande_id): bool {
+        try {
+            if (!$this->validateFile($file)) {
+                return false;
+            }
             
-            $stmt->execute([
-                $user_id, $visa_type, $pays_destination, $nom, $date_naissance, $lieu_naissance, $etat_civil,
-                $nationalite, $profession, $adresse, $telephone, $email, $num_passeport, $pays_delivrance,
-                $date_delivrance, $date_expiration, $a_deja_visa, $nb_visas, $details_voyages,
-                $nom_hote, $adresse_hote, $telephone_hote, $email_hote, $lien_parente
-            ]);
-
-            $demande_id = $pdo->lastInsertId();
-
-            // 🔹 Dossier uploads sécurisé
-            $uploadDir = __DIR__ . "/../../../uploads/visas/";
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0755, true);
-            }
-
-            // 🔹 Traitement fichiers simples avec gestion d'erreurs
-            $file_fields = [
-                'copie_passeport' => 'copie_passeport',
-                'documents_travail' => 'documents_travail',
-                'lettre_invitation' => 'lettre_invitation',
-                'justificatif_ressources' => 'justificatif_ressources',
-                'lettre_prise_en_charge' => 'lettre_prise_en_charge',
-                'prise_en_charge_entreprise' => 'prise_en_charge_entreprise',
-                'invitation_entreprise' => 'invitation_entreprise'
+            // Générer un nom de fichier sécurisé
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime_type = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            
+            $allowed_types = defined('ALLOWED_MIME_TYPES') ? ALLOWED_MIME_TYPES : [
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/jpg' => 'jpg',
+                'application/pdf' => 'pdf'
             ];
-
-            foreach ($file_fields as $field => $type) {
-                if (isset($_FILES[$field]) && $_FILES[$field]['error'] === UPLOAD_ERR_OK) {
-                    try {
-                        saveFile($_FILES[$field], $type, $demande_id, $pdo, $uploadDir);
-                    } catch (Exception $e) {
-                        error_log("Erreur upload fichier $field: " . $e->getMessage());
-                        // Continuer le traitement même si un fichier échoue
-                    }
-                }
+            
+            $extension = $allowed_types[$mime_type];
+            $safe_name = preg_replace('/[^a-zA-Z0-9._-]/', '_', basename($file['name']));
+            $filename = uniqid() . "_" . md5($safe_name . time()) . "." . $extension;
+            $filepath = $this->uploadDir . $filename;
+            
+            // Déplacer le fichier
+            if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+                $this->errors[] = "Impossible de déplacer le fichier téléchargé.";
+                return false;
             }
-
-            // 🔹 Traitement fichiers multiples (documents de travail)
-            if (!empty($_FILES['documents_travail_multiple']['name'][0])) {
-                $doc_files = $_FILES['documents_travail_multiple'];
-                for ($i = 0; $i < count($doc_files['name']); $i++) {
-                    if ($doc_files['error'][$i] === UPLOAD_ERR_OK) {
-                        $file_data = [
-                            'name' => $doc_files['name'][$i],
-                            'type' => $doc_files['type'][$i],
-                            'tmp_name' => $doc_files['tmp_name'][$i],
-                            'error' => $doc_files['error'][$i],
-                            'size' => $doc_files['size'][$i]
-                        ];
-                        try {
-                            saveFile($file_data, 'documents_travail', $demande_id, $pdo, $uploadDir);
-                        } catch (Exception $e) {
-                            error_log("Erreur upload document travail multiple: " . $e->getMessage());
-                        }
-                    }
-                }
-            }
-
-            // 🔹 Traitement fichiers multiples (visas précédents)
-            if ($a_deja_visa === 'oui' && !empty($_FILES['copies_visas']['name'][0])) {
-                $visa_files = $_FILES['copies_visas'];
-                for ($i = 0; $i < count($visa_files['name']); $i++) {
-                    if ($visa_files['error'][$i] === UPLOAD_ERR_OK) {
-                        $file_data = [
-                            'name' => $visa_files['name'][$i],
-                            'type' => $visa_files['type'][$i],
-                            'tmp_name' => $visa_files['tmp_name'][$i],
-                            'error' => $visa_files['error'][$i],
-                            'size' => $visa_files['size'][$i]
-                        ];
-                        try {
-                            saveFile($file_data, 'copie_visa', $demande_id, $pdo, $uploadDir);
-                        } catch (Exception $e) {
-                            error_log("Erreur upload visa multiple: " . $e->getMessage());
-                        }
-                    }
-                }
-            }
-
-            // 🔹 Redirection confirmation
-            header("Location: confirmation.php?id=" . $demande_id);
-            exit;
+            
+            // Changer les permissions du fichier
+            chmod($filepath, 0644);
+            
+            // Enregistrer dans la base de données
+            $stmt = $this->pdo->prepare("INSERT INTO demandes_court_sejour_fichiers 
+                (demande_id, type_fichier, chemin_fichier, nom_original, date_upload) 
+                VALUES (?, ?, ?, ?, NOW())");
+            $stmt->execute([$demande_id, $type, $filename, $safe_name]);
+            
+            return true;
+            
+        } catch (Exception $e) {
+            $this->errors[] = "Erreur lors de l'enregistrement du fichier : " . $e->getMessage();
+            return false;
         }
+    }
+    
+    public function saveMultipleFiles(array $files, string $type, int $demande_id): int {
+        $count = 0;
+        for ($i = 0; $i < count($files['name']); $i++) {
+            if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                $file_data = [
+                    'name' => $files['name'][$i],
+                    'type' => $files['type'][$i],
+                    'tmp_name' => $files['tmp_name'][$i],
+                    'error' => $files['error'][$i],
+                    'size' => $files['size'][$i]
+                ];
+                
+                if ($this->saveFile($file_data, $type, $demande_id)) {
+                    $count++;
+                }
+            }
+        }
+        return $count;
+    }
+    
+    private function getUploadError(int $error_code): string {
+        $errors = [
+            UPLOAD_ERR_INI_SIZE => 'Fichier trop volumineux (taille maximale dépassée)',
+            UPLOAD_ERR_FORM_SIZE => 'Fichier trop volumineux (formulaire)',
+            UPLOAD_ERR_PARTIAL => 'Upload partiel',
+            UPLOAD_ERR_NO_FILE => 'Aucun fichier',
+            UPLOAD_ERR_NO_TMP_DIR => 'Dossier temporaire manquant',
+            UPLOAD_ERR_CANT_WRITE => 'Erreur d\'écriture',
+            UPLOAD_ERR_EXTENSION => 'Extension PHP bloquée'
+        ];
+        
+        return $errors[$error_code] ?? 'Erreur inconnue';
+    }
+    
+    public function getErrors(): array {
+        return $this->errors;
+    }
+}
+
+// 🔹 Fonctions utilitaires
+function validateInput($data) {
+    if (empty($data)) return '';
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+    return $data;
+}
+
+function checkRateLimit(PDO $pdo, int $user_id): bool {
+    try {
+        $max_requests = defined('MAX_REQUESTS_PER_DAY') ? MAX_REQUESTS_PER_DAY : 5;
+        
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM demandes_court_sejour 
+                               WHERE user_id = ? AND DATE(date_demande) = CURDATE()");
+        $stmt->execute([$user_id]);
+        $count = $stmt->fetchColumn();
+        
+        return $count < $max_requests;
+    } catch (Exception $e) {
+        error_log("Erreur vérification rate limit: " . $e->getMessage());
+        return true; // En cas d'erreur, on autorise pour ne pas bloquer l'utilisateur
+    }
+}
+
+function initializeTables(PDO $pdo): void {
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS demandes_court_sejour (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            user_id INT NOT NULL,
+            visa_type VARCHAR(50),
+            pays_destination VARCHAR(100),
+            nom_complet VARCHAR(100),
+            date_naissance DATE,
+            lieu_naissance VARCHAR(100),
+            etat_civil VARCHAR(50),
+            nationalite VARCHAR(100),
+            profession VARCHAR(100),
+            adresse TEXT,
+            telephone VARCHAR(20),
+            email VARCHAR(100),
+            passeport VARCHAR(50),
+            pays_delivrance VARCHAR(100),
+            date_delivrance DATE,
+            date_expiration DATE,
+            a_deja_visa VARCHAR(3),
+            nb_visas INT DEFAULT 0,
+            details_voyages TEXT,
+            nom_hote VARCHAR(100),
+            adresse_hote TEXT,
+            telephone_hote VARCHAR(20),
+            email_hote VARCHAR(100),
+            lien_parente VARCHAR(50),
+            statut VARCHAR(20) DEFAULT 'en_attente',
+            date_demande DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_user_id (user_id),
+            INDEX idx_statut (statut),
+            INDEX idx_date_demande (date_demande)
+        )");
+        
+        $pdo->exec("CREATE TABLE IF NOT EXISTS demandes_court_sejour_fichiers (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            demande_id INT NOT NULL,
+            type_fichier VARCHAR(100),
+            chemin_fichier VARCHAR(255),
+            nom_original VARCHAR(255),
+            date_upload DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_demande_id (demande_id),
+            INDEX idx_type_fichier (type_fichier)
+        )");
+        
+    } catch (Exception $e) {
+        error_log("Erreur initialisation tables: " . $e->getMessage());
+        throw $e;
+    }
+}
+
+// 🔹 Initialiser les variables
+$form_data = [];
+$errors = [];
+$success = false;
+
+try {
+    // 🔹 Initialiser les tables
+    initializeTables($pdo);
+    
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // 🔹 Vérifier le token CSRF
+        if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+            $errors[] = "Token de sécurité invalide. Veuillez recharger la page.";
+        }
+        
+        // 🔹 Vérifier le rate limiting
+        if (!checkRateLimit($pdo, $_SESSION['user_id'])) {
+            $max_requests = defined('MAX_REQUESTS_PER_DAY') ? MAX_REQUESTS_PER_DAY : 5;
+            $errors[] = "Vous avez atteint la limite de " . $max_requests . " demandes par jour.";
+        }
+        
+        if (empty($errors)) {
+            // 🔹 Valider les données du formulaire
+            $validator = new VisaFormValidator($_POST);
+            
+            if ($validator->validate()) {
+                $validated_data = $validator->getValidatedData();
+                
+                // 🔹 Nettoyer et récupérer les données
+                $pays_destination   = validateInput($validated_data['pays_destination'] ?? '');
+                $visa_type          = validateInput($validated_data['visa_type'] ?? '');
+                $nom                = validateInput($validated_data['nom'] ?? '');
+                $date_naissance     = $validated_data['date_naissance'] ?? '';
+                $lieu_naissance     = validateInput($validated_data['lieu_naissance'] ?? '');
+                $etat_civil         = validateInput($validated_data['etat_civil'] ?? '');
+                $nationalite        = validateInput($validated_data['nationalite'] ?? '');
+                $profession         = validateInput($validated_data['profession'] ?? '');
+                $adresse            = validateInput($validated_data['adresse'] ?? '');
+                $telephone          = validateInput($validated_data['telephone'] ?? '');
+                $email              = filter_var($validated_data['email'], FILTER_VALIDATE_EMAIL);
+                $num_passeport      = validateInput($validated_data['num_passeport'] ?? '');
+                $pays_delivrance    = validateInput($validated_data['pays_delivrance'] ?? '');
+                $date_delivrance    = $validated_data['date_delivrance'] ?? '';
+                $date_expiration    = $validated_data['date_expiration'] ?? '';
+                $a_deja_visa        = $validated_data['voyages_precedents'] ?? 'non';
+                $nb_visas           = intval($validated_data['nb_visas'] ?? 0);
+                $details_voyages    = validateInput($validated_data['details_voyages'] ?? '');
+                
+                // 🔹 Champs conditionnels pour hébergement
+                $nom_hote           = validateInput($validated_data['nom_hote'] ?? '');
+                $adresse_hote       = validateInput($validated_data['adresse_hote'] ?? '');
+                $telephone_hote     = validateInput($validated_data['telephone_hote'] ?? '');
+                $email_hote         = !empty($validated_data['email_hote']) ? 
+                                      filter_var($validated_data['email_hote'], FILTER_VALIDATE_EMAIL) : '';
+                $lien_parente       = validateInput($validated_data['lien_parente'] ?? '');
+                
+                $user_id = $_SESSION['user_id'];
+                
+                // 🔹 Début de la transaction
+                $pdo->beginTransaction();
+                
+                try {
+                    // 🔹 Insertion dans `demandes_court_sejour`
+                    $stmt = $pdo->prepare("INSERT INTO demandes_court_sejour 
+                        (user_id, visa_type, pays_destination, nom_complet, date_naissance, lieu_naissance, etat_civil, 
+                        nationalite, profession, adresse, telephone, email, passeport, pays_delivrance, date_delivrance, 
+                        date_expiration, a_deja_visa, nb_visas, details_voyages, nom_hote, adresse_hote, telephone_hote, 
+                        email_hote, lien_parente) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    
+                    $stmt->execute([
+                        $user_id, $visa_type, $pays_destination, $nom, $date_naissance, $lieu_naissance, $etat_civil,
+                        $nationalite, $profession, $adresse, $telephone, $email, $num_passeport, $pays_delivrance,
+                        $date_delivrance, $date_expiration, $a_deja_visa, $nb_visas, $details_voyages,
+                        $nom_hote, $adresse_hote, $telephone_hote, $email_hote, $lien_parente
+                    ]);
+                    
+                    $demande_id = $pdo->lastInsertId();
+                    
+                    // 🔹 Dossier uploads - Correction du chemin
+                    $baseDir = realpath(__DIR__ . '/../../');
+                    if (!$baseDir) {
+                        $baseDir = dirname(__DIR__, 2);
+                    }
+                    
+                    $uploadDir = $baseDir . '/uploads/visas/court_sejour/';
+                    
+                    // Créer le dossier s'il n'existe pas
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+                    
+                    // Vérifier que le chemin est sécurisé (optionnel)
+                    $realUploadDir = realpath($uploadDir);
+                    $realBaseDir = realpath($baseDir . '/uploads/');
+                    
+                    if ($realUploadDir && $realBaseDir && strpos($realUploadDir, $realBaseDir) === 0) {
+                        // Chemin valide
+                    } else {
+                        // Log l'erreur mais continue
+                        error_log("Chemin d'upload potentiellement invalide: " . $uploadDir);
+                    }
+                    
+                    // 🔹 Initialiser l'uploader de fichiers
+                    $fileUploader = new FileUploader($pdo, $uploadDir);
+                    
+                    // 🔹 Traitement fichiers simples
+                    $file_fields = [
+                        'copie_passeport' => 'copie_passeport',
+                        'documents_travail' => 'documents_travail',
+                        'lettre_invitation' => 'lettre_invitation',
+                        'justificatif_ressources' => 'justificatif_ressources',
+                        'lettre_prise_en_charge' => 'lettre_prise_en_charge',
+                        'prise_en_charge_entreprise' => 'prise_en_charge_entreprise',
+                        'invitation_entreprise' => 'invitation_entreprise'
+                    ];
+                    
+                    foreach ($file_fields as $field => $type) {
+                        if (isset($_FILES[$field]) && $_FILES[$field]['error'] === UPLOAD_ERR_OK) {
+                            $fileUploader->saveFile($_FILES[$field], $type, $demande_id);
+                        }
+                    }
+                    
+                    // 🔹 Traitement fichiers multiples (documents de travail)
+                    if (!empty($_FILES['documents_travail_multiple']['name'][0])) {
+                        $fileUploader->saveMultipleFiles(
+                            $_FILES['documents_travail_multiple'], 
+                            'documents_travail', 
+                            $demande_id
+                        );
+                    }
+                    
+                    // 🔹 Traitement fichiers multiples (visas précédents)
+                    if ($a_deja_visa === 'oui' && !empty($_FILES['copies_visas']['name'][0])) {
+                        $fileUploader->saveMultipleFiles(
+                            $_FILES['copies_visas'], 
+                            'copie_visa', 
+                            $demande_id
+                        );
+                    }
+                    
+                    // 🔹 Valider la transaction
+                    $pdo->commit();
+                    
+                    // 🔹 Régénérer le token CSRF
+                    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+                    
+                    // 🔹 Redirection avec confirmation
+                    $_SESSION['form_success'] = true;
+                    $_SESSION['last_demande_id'] = $demande_id;
+                    
+                    header("Location: confirmation.php?id=" . $demande_id . "&token=" . bin2hex(random_bytes(16)));
+                    exit;
+                    
+                } catch (Exception $e) {
+                    $pdo->rollBack();
+                    throw $e;
+                }
+                
+            } else {
+                $errors = array_merge($errors, $validator->getErrors());
+                $form_data = $_POST;
+            }
+        } else {
+            $form_data = $_POST;
+        }
+    } else {
+        // Pour les requêtes GET, régénérer le token CSRF
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
 
 } catch (PDOException $e) {
     error_log("Erreur BDD formulaire visa: " . $e->getMessage());
-    echo "<div class='alert alert-danger'>Une erreur de base de données est survenue. Veuillez réessayer.</div>";
+    $errors[] = "Erreur de base de données. Veuillez réessayer plus tard.";
 } catch (Exception $e) {
     error_log("Erreur générale formulaire visa: " . $e->getMessage());
-    echo "<div class='alert alert-danger'>Une erreur est survenue: " . htmlspecialchars($e->getMessage()) . "</div>";
+    $errors[] = "Une erreur est survenue : " . htmlspecialchars($e->getMessage());
 }
 ?>
 
@@ -245,6 +550,7 @@ try {
       --border-color: #dbe4ee;
       --success-color: #28a745;
       --error-color: #dc3545;
+      --warning-color: #ffc107;
       --border-radius: 8px;
       --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       --transition: all 0.3s ease;
@@ -299,6 +605,12 @@ try {
       border: 1px solid var(--border-color);
       border-radius: var(--border-radius);
       background: var(--light-gray);
+      transition: var(--transition);
+    }
+    
+    .form-section.active {
+      border-left: 4px solid var(--primary-color);
+      box-shadow: var(--box-shadow);
     }
     
     .form-section h3 {
@@ -317,6 +629,7 @@ try {
     
     .form-group {
       margin-bottom: 20px;
+      position: relative;
     }
     
     label {
@@ -344,6 +657,17 @@ try {
       outline: none;
       border-color: var(--secondary-color);
       box-shadow: 0 0 0 3px rgba(0, 85, 170, 0.2);
+    }
+    
+    input.error, select.error, textarea.error {
+      border-color: var(--error-color);
+    }
+    
+    .error-message {
+      color: var(--error-color);
+      font-size: 0.85rem;
+      margin-top: 5px;
+      display: none;
     }
     
     .file-input {
@@ -382,10 +706,15 @@ try {
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     }
     
-    .btn-submit:hover {
+    .btn-submit:hover:not(:disabled) {
       background: linear-gradient(to right, #002244, #004488);
       transform: translateY(-2px);
       box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+    }
+    
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
     
     .btn-submit i {
@@ -419,12 +748,20 @@ try {
       padding-left: 15px;
       margin-top: 15px;
       margin-bottom: 15px;
+      animation: fadeIn 0.3s ease;
     }
     
     .alert {
       padding: 15px;
       margin-bottom: 20px;
       border-radius: var(--border-radius);
+      display: flex;
+      align-items: center;
+    }
+    
+    .alert i {
+      margin-right: 10px;
+      font-size: 1.2rem;
     }
     
     .alert-danger {
@@ -437,6 +774,12 @@ try {
       background-color: #d4edda;
       border: 1px solid #c3e6cb;
       color: #155724;
+    }
+    
+    .alert-warning {
+      background-color: #fff3cd;
+      border: 1px solid #ffeaa7;
+      color: #856404;
     }
     
     .progress-container {
@@ -468,6 +811,26 @@ try {
       width: 33%;
     }
     
+    .char-counter {
+      font-size: 0.8rem;
+      color: #666;
+      text-align: right;
+      margin-top: 5px;
+    }
+    
+    .rate-limit-info {
+      background: var(--light-blue);
+      padding: 10px 15px;
+      border-radius: var(--border-radius);
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
     @media (max-width: 768px) {
       .form-row {
         flex-direction: column;
@@ -481,6 +844,10 @@ try {
       .progress-steps {
         font-size: 0.8rem;
       }
+      
+      .form-section {
+        padding: 15px;
+      }
     }
   </style>
 </head>
@@ -490,6 +857,27 @@ try {
     <h1><i class="fas fa-passport"></i> Demande de Visa Court Séjour</h1>
     <p>Remplissez soigneusement tous les champs obligatoires (*)</p>
   </header>
+
+  <!-- Informations sur la limite de demandes -->
+  <div class="rate-limit-info">
+    <i class="fas fa-info-circle"></i> 
+    Limite : <?php echo defined('MAX_REQUESTS_PER_DAY') ? MAX_REQUESTS_PER_DAY : 5; ?> demandes par jour maximum
+  </div>
+
+  <!-- Affichage des erreurs -->
+  <?php if (!empty($errors)): ?>
+    <div class="alert alert-danger">
+      <i class="fas fa-exclamation-triangle"></i>
+      <div>
+        <strong>Erreurs :</strong>
+        <ul style="margin-top: 10px; margin-left: 20px;">
+          <?php foreach ($errors as $error): ?>
+            <li><?= htmlspecialchars($error) ?></li>
+          <?php endforeach; ?>
+        </ul>
+      </div>
+    </div>
+  <?php endif; ?>
 
   <!-- Indicateur de progression -->
   <div class="progress-container">
@@ -504,14 +892,20 @@ try {
   </div>
 
   <div class="form-content">
-    <form method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
+    <form method="post" enctype="multipart/form-data" id="visa-form" novalidate>
+      <!-- Token CSRF -->
+      <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
       
       <!-- Destination -->
-      <div class="form-section">
+      <div class="form-section active">
         <h3><i class="fas fa-globe"></i> Destination</h3>
         <div class="form-group">
           <label class="required">Pays de destination</label>
-          <input type="text" name="pays_destination" required placeholder="Entrez le pays de destination">
+          <input type="text" name="pays_destination" required 
+                 placeholder="Entrez le pays de destination" 
+                 value="<?= htmlspecialchars($form_data['pays_destination'] ?? '') ?>"
+                 oninput="validateField(this)">
+          <div class="error-message" id="error-pays_destination"></div>
         </div>
       </div>
       
@@ -522,11 +916,12 @@ try {
           <label class="required">Choisissez le type de visa</label>
           <select id="visa_type" name="visa_type" required onchange="toggleVisaType()">
             <option value="">-- Sélectionnez --</option>
-            <option value="tourisme">Visa Tourisme</option>
-            <option value="affaires">Visa Affaires</option>
-            <option value="visite_familiale">Visite Familiale</option>
-            <option value="autre">Autre</option>
+            <option value="tourisme" <?= ($form_data['visa_type'] ?? '') == 'tourisme' ? 'selected' : '' ?>>Visa Tourisme</option>
+            <option value="affaires" <?= ($form_data['visa_type'] ?? '') == 'affaires' ? 'selected' : '' ?>>Visa Affaires</option>
+            <option value="visite_familiale" <?= ($form_data['visa_type'] ?? '') == 'visite_familiale' ? 'selected' : '' ?>>Visite Familiale</option>
+            <option value="autre" <?= ($form_data['visa_type'] ?? '') == 'autre' ? 'selected' : '' ?>>Autre</option>
           </select>
+          <div class="error-message" id="error-visa_type"></div>
         </div>
       </div>
 
@@ -536,62 +931,93 @@ try {
         <div class="form-row">
           <div class="form-group">
             <label class="required">Nom complet</label>
-            <input type="text" name="nom" required>
+            <input type="text" name="nom" required 
+                   value="<?= htmlspecialchars($form_data['nom'] ?? '') ?>"
+                   oninput="validateField(this)">
+            <div class="error-message" id="error-nom"></div>
           </div>
           <div class="form-group">
             <label class="required">Date de naissance</label>
-            <input type="date" name="date_naissance" required>
+            <input type="date" name="date_naissance" required 
+                   max="<?= date('Y-m-d', strtotime('-1 day')) ?>"
+                   value="<?= htmlspecialchars($form_data['date_naissance'] ?? '') ?>"
+                   onchange="validateField(this)">
+            <div class="error-message" id="error-date_naissance"></div>
           </div>
         </div>
         
         <div class="form-row">
           <div class="form-group">
             <label class="required">Lieu de naissance</label>
-            <input type="text" name="lieu_naissance" required>
+            <input type="text" name="lieu_naissance" required 
+                   value="<?= htmlspecialchars($form_data['lieu_naissance'] ?? '') ?>"
+                   oninput="validateField(this)">
+            <div class="error-message" id="error-lieu_naissance"></div>
           </div>
           <div class="form-group">
             <label class="required">État civil</label>
-            <select name="etat_civil" required>
+            <select name="etat_civil" required onchange="validateField(this)">
               <option value="">-- Sélectionnez --</option>
-              <option value="celibataire">Célibataire</option>
-              <option value="marie">Marié(e)</option>
-              <option value="divorce">Divorcé(e)</option>
-              <option value="veuf">Veuf/Veuve</option>
+              <option value="celibataire" <?= ($form_data['etat_civil'] ?? '') == 'celibataire' ? 'selected' : '' ?>>Célibataire</option>
+              <option value="marie" <?= ($form_data['etat_civil'] ?? '') == 'marie' ? 'selected' : '' ?>>Marié(e)</option>
+              <option value="divorce" <?= ($form_data['etat_civil'] ?? '') == 'divorce' ? 'selected' : '' ?>>Divorcé(e)</option>
+              <option value="veuf" <?= ($form_data['etat_civil'] ?? '') == 'veuf' ? 'selected' : '' ?>>Veuf/Veuve</option>
             </select>
+            <div class="error-message" id="error-etat_civil"></div>
           </div>
         </div>
         
         <div class="form-row">
           <div class="form-group">
             <label class="required">Nationalité</label>
-            <input type="text" name="nationalite" required>
+            <input type="text" name="nationalite" required 
+                   value="<?= htmlspecialchars($form_data['nationalite'] ?? '') ?>"
+                   oninput="validateField(this)">
+            <div class="error-message" id="error-nationalite"></div>
           </div>
           <div class="form-group">
             <label class="required">Profession</label>
-            <input type="text" name="profession" required>
+            <input type="text" name="profession" required 
+                   value="<?= htmlspecialchars($form_data['profession'] ?? '') ?>"
+                   oninput="validateField(this)">
+            <div class="error-message" id="error-profession"></div>
           </div>
         </div>
         
         <div class="form-row">
           <div class="form-group">
             <label class="required">Adresse</label>
-            <input type="text" name="adresse" required>
+            <input type="text" name="adresse" required 
+                   value="<?= htmlspecialchars($form_data['adresse'] ?? '') ?>"
+                   oninput="validateField(this)">
+            <div class="error-message" id="error-adresse"></div>
           </div>
           <div class="form-group">
             <label class="required">Téléphone</label>
-            <input type="tel" name="telephone" required>
+            <input type="tel" name="telephone" required 
+                   pattern="^[+]?[0-9\s\-\(\)]{10,20}$"
+                   placeholder="+33 1 23 45 67 89"
+                   value="<?= htmlspecialchars($form_data['telephone'] ?? '') ?>"
+                   oninput="validateField(this)">
+            <div class="error-message" id="error-telephone"></div>
           </div>
         </div>
         
         <div class="form-group">
           <label class="required">Email</label>
-          <input type="email" name="email" required>
+          <input type="email" name="email" required 
+                 value="<?= htmlspecialchars($form_data['email'] ?? '') ?>"
+                 oninput="validateField(this)">
+          <div class="error-message" id="error-email"></div>
         </div>
 
         <div class="form-group">
           <label>Documents de travail (plusieurs fichiers possibles)</label>
-          <input type="file" name="documents_travail_multiple[]" class="file-input" accept=".pdf,.jpg,.png" multiple>
-          <span class="file-hint">Contrat de travail, fiche de paie, etc. (PDF, JPG, PNG - max 5MB par fichier)</span>
+          <input type="file" name="documents_travail_multiple[]" class="file-input" 
+                 accept=".pdf,.jpg,.png" multiple
+                 onchange="validateFileSize(this)">
+          <span class="file-hint">Contrat de travail, fiche de paie, etc. (PDF, JPG, PNG - max <?= (MAX_FILE_SIZE / 1024 / 1024) ?>MB par fichier)</span>
+          <div class="error-message" id="error-documents_travail_multiple"></div>
         </div>
       </div>
 
@@ -601,29 +1027,48 @@ try {
         <div class="form-row">
           <div class="form-group">
             <label class="required">Numéro de passeport</label>
-            <input type="text" name="num_passeport" required>
+            <input type="text" name="num_passeport" required 
+                   pattern="[A-Z0-9]{6,12}"
+                   placeholder="Ex: AB123456"
+                   value="<?= htmlspecialchars($form_data['num_passeport'] ?? '') ?>"
+                   oninput="validateField(this)">
+            <div class="error-message" id="error-num_passeport"></div>
           </div>
           <div class="form-group">
             <label class="required">Pays de délivrance</label>
-            <input type="text" name="pays_delivrance" required>
+            <input type="text" name="pays_delivrance" required 
+                   value="<?= htmlspecialchars($form_data['pays_delivrance'] ?? '') ?>"
+                   oninput="validateField(this)">
+            <div class="error-message" id="error-pays_delivrance"></div>
           </div>
         </div>
         
         <div class="form-row">
           <div class="form-group">
             <label class="required">Date de délivrance</label>
-            <input type="date" name="date_delivrance" required>
+            <input type="date" name="date_delivrance" required 
+                   max="<?= date('Y-m-d') ?>"
+                   value="<?= htmlspecialchars($form_data['date_delivrance'] ?? '') ?>"
+                   onchange="validateDates(this)">
+            <div class="error-message" id="error-date_delivrance"></div>
           </div>
           <div class="form-group">
             <label class="required">Date d'expiration</label>
-            <input type="date" name="date_expiration" required>
+            <input type="date" name="date_expiration" required 
+                   min="<?= date('Y-m-d', strtotime('+1 day')) ?>"
+                   value="<?= htmlspecialchars($form_data['date_expiration'] ?? '') ?>"
+                   onchange="validateDates(this)">
+            <div class="error-message" id="error-date_expiration"></div>
           </div>
         </div>
         
         <div class="form-group">
           <label class="required">Copie du passeport (PDF ou image)</label>
-          <input type="file" name="copie_passeport" class="file-input" accept=".pdf,.jpg,.png" required>
-          <span class="file-hint">Pages avec photo et informations personnelles (PDF, JPG, PNG - max 5MB)</span>
+          <input type="file" name="copie_passeport" class="file-input" 
+                 accept=".pdf,.jpg,.png" required
+                 onchange="validateFileSize(this)">
+          <span class="file-hint">Pages avec photo et informations personnelles (PDF, JPG, PNG - max <?= (MAX_FILE_SIZE / 1024 / 1024) ?>MB)</span>
+          <div class="error-message" id="error-copie_passeport"></div>
         </div>
       </div>
 
@@ -633,11 +1078,15 @@ try {
         <div class="form-row">
           <div class="form-group">
             <label>Date d'arrivée prévue</label>
-            <input type="date" name="date_arrivee">
+            <input type="date" name="date_arrivee" 
+                   min="<?= date('Y-m-d') ?>"
+                   value="<?= htmlspecialchars($form_data['date_arrivee'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Date de départ prévue</label>
-            <input type="date" name="date_depart">
+            <input type="date" name="date_depart" 
+                   min="<?= date('Y-m-d') ?>"
+                   value="<?= htmlspecialchars($form_data['date_depart'] ?? '') ?>">
           </div>
         </div>
 
@@ -646,8 +1095,8 @@ try {
           <label>Type d'hébergement</label>
           <select id="hebergement_type" name="hebergement_type" onchange="toggleHebergementFields()">
             <option value="">-- Sélectionnez --</option>
-            <option value="hotel">Hôtel</option>
-            <option value="particulier">Chez un particulier</option>
+            <option value="hotel" <?= ($form_data['hebergement_type'] ?? '') == 'hotel' ? 'selected' : '' ?>>Hôtel</option>
+            <option value="particulier" <?= ($form_data['hebergement_type'] ?? '') == 'particulier' ? 'selected' : '' ?>>Chez un particulier</option>
           </select>
         </div>
         
@@ -655,20 +1104,25 @@ try {
         <div id="hotel_fields" class="conditional-section hidden">
           <div class="form-group">
             <label>Nom de l'hôtel</label>
-            <input type="text" name="nom_hotel" placeholder="Nom de l'établissement">
+            <input type="text" name="nom_hotel" placeholder="Nom de l'établissement" 
+                   value="<?= htmlspecialchars($form_data['nom_hotel'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Adresse de l'hôtel</label>
-            <input type="text" name="adresse_hotel" placeholder="Adresse complète de l'hôtel">
+            <input type="text" name="adresse_hotel" placeholder="Adresse complète de l'hôtel" 
+                   value="<?= htmlspecialchars($form_data['adresse_hotel'] ?? '') ?>">
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Téléphone de l'hôtel</label>
-              <input type="tel" name="telephone_hotel">
+              <input type="tel" name="telephone_hotel" 
+                     pattern="^[+]?[0-9\s\-\(\)]{10,20}$"
+                     value="<?= htmlspecialchars($form_data['telephone_hotel'] ?? '') ?>">
             </div>
             <div class="form-group">
               <label>Email de l'hôtel</label>
-              <input type="email" name="email_hotel">
+              <input type="email" name="email_hotel" 
+                     value="<?= htmlspecialchars($form_data['email_hotel'] ?? '') ?>">
             </div>
           </div>
         </div>
@@ -676,36 +1130,47 @@ try {
         <div id="particulier_fields" class="conditional-section hidden">
           <div class="form-group">
             <label>Nom et prénom de l'hôte</label>
-            <input type="text" name="nom_hote">
+            <input type="text" name="nom_hote" 
+                   value="<?= htmlspecialchars($form_data['nom_hote'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Adresse complète de l'hôte</label>
-            <input type="text" name="adresse_hote">
+            <input type="text" name="adresse_hote" 
+                   value="<?= htmlspecialchars($form_data['adresse_hote'] ?? '') ?>">
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Téléphone de l'hôte</label>
-              <input type="tel" name="telephone_hote">
+              <input type="tel" name="telephone_hote" 
+                     pattern="^[+]?[0-9\s\-\(\)]{10,20}$"
+                     value="<?= htmlspecialchars($form_data['telephone_hote'] ?? '') ?>">
             </div>
             <div class="form-group">
               <label>Email de l'hôte</label>
-              <input type="email" name="email_hote">
+              <input type="email" name="email_hote" 
+                     value="<?= htmlspecialchars($form_data['email_hote'] ?? '') ?>">
             </div>
           </div>
           <div class="form-group">
             <label>Lien de parenté</label>
-            <input type="text" name="lien_parente" placeholder="Ex: Frère, Cousin, Ami, etc.">
+            <input type="text" name="lien_parente" placeholder="Ex: Frère, Cousin, Ami, etc." 
+                   value="<?= htmlspecialchars($form_data['lien_parente'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Lettre d'invitation</label>
-            <input type="file" name="lettre_invitation" class="file-input" accept=".pdf,.jpg,.png">
-            <span class="file-hint">Lettre d'invitation de votre hôte (PDF, JPG, PNG - max 5MB)</span>
+            <input type="file" name="lettre_invitation" class="file-input" 
+                   accept=".pdf,.jpg,.png"
+                   onchange="validateFileSize(this)">
+            <span class="file-hint">Lettre d'invitation de votre hôte (PDF, JPG, PNG - max <?= (MAX_FILE_SIZE / 1024 / 1024) ?>MB)</span>
           </div>
         </div>
         
         <div class="form-group">
           <label>Itinéraire de voyage</label>
-          <textarea name="itineraire" rows="3" placeholder="Décrivez votre itinéraire et les villes que vous prévoyez de visiter..."></textarea>
+          <textarea name="itineraire" rows="3" maxlength="1000"
+                    placeholder="Décrivez votre itinéraire et les villes que vous prévoyez de visiter..."
+                    oninput="updateCharCounter(this)"><?= htmlspecialchars($form_data['itineraire'] ?? '') ?></textarea>
+          <div class="char-counter" id="itineraire-counter">0/1000</div>
         </div>
       </div>
 
@@ -715,71 +1180,90 @@ try {
         <div class="form-row">
           <div class="form-group">
             <label>Nom de l'entreprise</label>
-            <input type="text" name="entreprise_origine">
+            <input type="text" name="entreprise_origine" 
+                   value="<?= htmlspecialchars($form_data['entreprise_origine'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Votre poste</label>
-            <input type="text" name="poste">
+            <input type="text" name="poste" 
+                   value="<?= htmlspecialchars($form_data['poste'] ?? '') ?>">
           </div>
         </div>
         
         <div class="form-group">
           <label>Adresse de l'entreprise</label>
-          <input type="text" name="adresse_entreprise">
+          <input type="text" name="adresse_entreprise" 
+                 value="<?= htmlspecialchars($form_data['adresse_entreprise'] ?? '') ?>">
         </div>
         
         <div class="form-row">
           <div class="form-group">
             <label>Téléphone de l'entreprise</label>
-            <input type="tel" name="tel_entreprise">
+            <input type="tel" name="tel_entreprise" 
+                   pattern="^[+]?[0-9\s\-\(\)]{10,20}$"
+                   value="<?= htmlspecialchars($form_data['tel_entreprise'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Email de l'entreprise</label>
-            <input type="email" name="email_entreprise">
+            <input type="email" name="email_entreprise" 
+                   value="<?= htmlspecialchars($form_data['email_entreprise'] ?? '') ?>">
           </div>
         </div>
         
         <div class="form-group">
           <label>Nom de l'entreprise de destination</label>
-          <input type="text" name="entreprise_destination">
+          <input type="text" name="entreprise_destination" 
+                 value="<?= htmlspecialchars($form_data['entreprise_destination'] ?? '') ?>">
         </div>
         
         <div class="form-group">
           <label>Adresse de l'entreprise de destination</label>
-          <input type="text" name="adresse_entreprise_destination">
+          <input type="text" name="adresse_entreprise_destination" 
+                 value="<?= htmlspecialchars($form_data['adresse_entreprise_destination'] ?? '') ?>">
         </div>
         
         <div class="form-row">
           <div class="form-group">
             <label>Personne à contacter</label>
-            <input type="text" name="contact_destination">
+            <input type="text" name="contact_destination" 
+                   value="<?= htmlspecialchars($form_data['contact_destination'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Téléphone du contact</label>
-            <input type="tel" name="tel_contact_destination">
+            <input type="tel" name="tel_contact_destination" 
+                   pattern="^[+]?[0-9\s\-\(\)]{10,20}$"
+                   value="<?= htmlspecialchars($form_data['tel_contact_destination'] ?? '') ?>">
           </div>
         </div>
         
         <div class="form-group">
           <label>Objet de la mission</label>
-          <textarea name="objet_mission" rows="3"></textarea>
+          <textarea name="objet_mission" rows="3" maxlength="500"
+                    oninput="updateCharCounter(this)"><?= htmlspecialchars($form_data['objet_mission'] ?? '') ?></textarea>
+          <div class="char-counter" id="objet_mission-counter">0/500</div>
         </div>
         
         <div class="form-row">
           <div class="form-group">
             <label>Date de début de mission</label>
-            <input type="date" name="debut_mission">
+            <input type="date" name="debut_mission" 
+                   min="<?= date('Y-m-d') ?>"
+                   value="<?= htmlspecialchars($form_data['debut_mission'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Date de fin de mission</label>
-            <input type="date" name="fin_mission">
+            <input type="date" name="fin_mission" 
+                   min="<?= date('Y-m-d') ?>"
+                   value="<?= htmlspecialchars($form_data['fin_mission'] ?? '') ?>">
           </div>
         </div>
         
         <div class="form-group">
           <label>Lettre d'invitation de l'entreprise</label>
-          <input type="file" name="invitation_entreprise" class="file-input" accept=".pdf,.jpg,.png">
-          <span class="file-hint">Document officiel sur papier entête de l'entreprise (PDF, JPG, PNG - max 5MB)</span>
+          <input type="file" name="invitation_entreprise" class="file-input" 
+                 accept=".pdf,.jpg,.png"
+                 onchange="validateFileSize(this)">
+          <span class="file-hint">Document officiel sur papier entête de l'entreprise (PDF, JPG, PNG - max <?= (MAX_FILE_SIZE / 1024 / 1024) ?>MB)</span>
         </div>
       </div>
 
@@ -789,41 +1273,53 @@ try {
         <div class="form-row">
           <div class="form-group">
             <label>Date d'arrivée prévue</label>
-            <input type="date" name="date_arrivee_familiale">
+            <input type="date" name="date_arrivee_familiale" 
+                   min="<?= date('Y-m-d') ?>"
+                   value="<?= htmlspecialchars($form_data['date_arrivee_familiale'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Date de départ prévue</label>
-            <input type="date" name="date_depart_familiale">
+            <input type="date" name="date_depart_familiale" 
+                   min="<?= date('Y-m-d') ?>"
+                   value="<?= htmlspecialchars($form_data['date_depart_familiale'] ?? '') ?>">
           </div>
         </div>
 
         <h3><i class="fas fa-home"></i> Hébergement chez un particulier</h3>
         <div class="form-group">
           <label>Nom et prénom de l'hôte</label>
-          <input type="text" name="nom_hote">
+          <input type="text" name="nom_hote" 
+                 value="<?= htmlspecialchars($form_data['nom_hote'] ?? '') ?>">
         </div>
         <div class="form-group">
           <label>Adresse complète de l'hôte</label>
-          <input type="text" name="adresse_hote">
+          <input type="text" name="adresse_hote" 
+                 value="<?= htmlspecialchars($form_data['adresse_hote'] ?? '') ?>">
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>Téléphone de l'hôte</label>
-            <input type="tel" name="telephone_hote">
+            <input type="tel" name="telephone_hote" 
+                   pattern="^[+]?[0-9\s\-\(\)]{10,20}$"
+                   value="<?= htmlspecialchars($form_data['telephone_hote'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Email de l'hôte</label>
-            <input type="email" name="email_hote">
+            <input type="email" name="email_hote" 
+                   value="<?= htmlspecialchars($form_data['email_hote'] ?? '') ?>">
           </div>
         </div>
         <div class="form-group">
           <label>Lien de parenté</label>
-          <input type="text" name="lien_parente" placeholder="Ex: Frère, Cousin, Ami, etc.">
+          <input type="text" name="lien_parente" placeholder="Ex: Frère, Cousin, Ami, etc." 
+                 value="<?= htmlspecialchars($form_data['lien_parente'] ?? '') ?>">
         </div>
         <div class="form-group">
           <label>Lettre d'invitation</label>
-          <input type="file" name="lettre_invitation" class="file-input" accept=".pdf,.jpg,.png">
-          <span class="file-hint">Lettre d'invitation de votre hôte (PDF, JPG, PNG - max 5MB)</span>
+          <input type="file" name="lettre_invitation" class="file-input" 
+                 accept=".pdf,.jpg,.png"
+                 onchange="validateFileSize(this)">
+          <span class="file-hint">Lettre d'invitation de votre hôte (PDF, JPG, PNG - max <?= (MAX_FILE_SIZE / 1024 / 1024) ?>MB)</span>
         </div>
       </div>
 
@@ -834,9 +1330,9 @@ try {
           <label>Moyens de subsistance</label>
           <select id="ressources" name="ressources" onchange="toggleRessourcesFields()">
             <option value="">-- Sélectionnez --</option>
-            <option value="moi_meme">Moi-même</option>
-            <option value="garant">Prise en charge par garant</option>
-            <option value="entreprise">Prise en charge par l'entreprise</option>
+            <option value="moi_meme" <?= ($form_data['ressources'] ?? '') == 'moi_meme' ? 'selected' : '' ?>>Moi-même</option>
+            <option value="garant" <?= ($form_data['ressources'] ?? '') == 'garant' ? 'selected' : '' ?>>Prise en charge par garant</option>
+            <option value="entreprise" <?= ($form_data['ressources'] ?? '') == 'entreprise' ? 'selected' : '' ?>>Prise en charge par l'entreprise</option>
           </select>
         </div>
         
@@ -844,42 +1340,53 @@ try {
         <div id="moi_meme_fields" class="conditional-section hidden">
           <div class="form-group">
             <label>Justificatif de ressources personnelles</label>
-            <input type="file" name="justificatif_ressources" class="file-input" accept=".pdf,.jpg,.png">
-            <span class="file-hint">Relevés bancaires, fiches de paie, etc. (PDF, JPG, PNG - max 5MB)</span>
+            <input type="file" name="justificatif_ressources" class="file-input" 
+                   accept=".pdf,.jpg,.png"
+                   onchange="validateFileSize(this)">
+            <span class="file-hint">Relevés bancaires, fiches de paie, etc. (PDF, JPG, PNG - max <?= (MAX_FILE_SIZE / 1024 / 1024) ?>MB)</span>
           </div>
         </div>
         
         <div id="garant_fields" class="conditional-section hidden">
           <div class="form-group">
             <label>Nom et prénom du garant</label>
-            <input type="text" name="nom_garant">
+            <input type="text" name="nom_garant" 
+                   value="<?= htmlspecialchars($form_data['nom_garant'] ?? '') ?>">
           </div>
           <div class="form-group">
             <label>Adresse du garant</label>
-            <input type="text" name="adresse_garant">
+            <input type="text" name="adresse_garant" 
+                   value="<?= htmlspecialchars($form_data['adresse_garant'] ?? '') ?>">
           </div>
           <div class="form-row">
             <div class="form-group">
               <label>Téléphone du garant</label>
-              <input type="tel" name="telephone_garant">
+              <input type="tel" name="telephone_garant" 
+                     pattern="^[+]?[0-9\s\-\(\)]{10,20}$"
+                     value="<?= htmlspecialchars($form_data['telephone_garant'] ?? '') ?>">
             </div>
             <div class="form-group">
               <label>Email du garant</label>
-              <input type="email" name="email_garant">
+              <input type="email" name="email_garant" 
+                     value="<?= htmlspecialchars($form_data['email_garant'] ?? '') ?>">
             </div>
           </div>
           <div class="form-group">
             <label>Lettre de prise en charge</label>
-            <input type="file" name="lettre_prise_en_charge" class="file-input" accept=".pdf,.jpg,.png">
-            <span class="file-hint">Lettre de prise en charge signée (PDF, JPG, PNG - max 5MB)</span>
+            <input type="file" name="lettre_prise_en_charge" class="file-input" 
+                   accept=".pdf,.jpg,.png"
+                   onchange="validateFileSize(this)">
+            <span class="file-hint">Lettre de prise en charge signée (PDF, JPG, PNG - max <?= (MAX_FILE_SIZE / 1024 / 1024) ?>MB)</span>
           </div>
         </div>
         
         <div id="entreprise_fields" class="conditional-section hidden">
           <div class="form-group">
             <label>Lettre de prise en charge de l'entreprise</label>
-            <input type="file" name="prise_en_charge_entreprise" class="file-input" accept=".pdf,.jpg,.png">
-            <span class="file-hint">Lettre de prise en charge de l'entreprise (PDF, JPG, PNG - max 5MB)</span>
+            <input type="file" name="prise_en_charge_entreprise" class="file-input" 
+                   accept=".pdf,.jpg,.png"
+                   onchange="validateFileSize(this)">
+            <span class="file-hint">Lettre de prise en charge de l'entreprise (PDF, JPG, PNG - max <?= (MAX_FILE_SIZE / 1024 / 1024) ?>MB)</span>
           </div>
         </div>
       </div>
@@ -890,23 +1397,27 @@ try {
         <div class="form-group">
           <label>Avez-vous déjà voyagé dans le pays de destination ou dans l'espace Schengen ?</label>
           <select name="voyages_precedents" onchange="toggleVisaFields()">
-            <option value="non">Non</option>
-            <option value="oui">Oui</option>
+            <option value="non" <?= ($form_data['voyages_precedents'] ?? 'non') == 'non' ? 'selected' : '' ?>>Non</option>
+            <option value="oui" <?= ($form_data['voyages_precedents'] ?? '') == 'oui' ? 'selected' : '' ?>>Oui</option>
           </select>
           <!-- Champ caché pour faciliter le traitement -->
-          <input type="hidden" name="a_deja_visa" id="a_deja_visa" value="non">
+          <input type="hidden" name="a_deja_visa" id="a_deja_visa" value="<?= $form_data['a_deja_visa'] ?? 'non' ?>">
         </div>
         
         <div id="details_visa" style="display:none;">
           <div class="form-group">
             <label>Nombre de visas obtenus</label>
-            <input type="number" name="nb_visas" id="nb_visas" min="1" onchange="generateVisaInputs()">
+            <input type="number" name="nb_visas" id="nb_visas" min="0" max="10" 
+                   value="<?= $form_data['nb_visas'] ?? 0 ?>" onchange="generateVisaInputs()">
           </div>
           <div id="visa_inputs"></div>
           
           <div class="form-group">
             <label>Détails des voyages précédents</label>
-            <textarea name="details_voyages" rows="3" placeholder="Décrivez vos voyages précédents, dates et destinations..."></textarea>
+            <textarea name="details_voyages" rows="3" maxlength="1000"
+                      placeholder="Décrivez vos voyages précédents, dates et destinations..."
+                      oninput="updateCharCounter(this)"><?= htmlspecialchars($form_data['details_voyages'] ?? '') ?></textarea>
+            <div class="char-counter" id="details_voyages-counter">0/1000</div>
           </div>
         </div>
       </div>
@@ -916,70 +1427,79 @@ try {
         <h3><i class="fas fa-file-signature"></i> Déclaration</h3>
         <div class="form-group">
           <label class="required">
-            <input type="checkbox" name="declaration" required>
+            <input type="checkbox" name="declaration" required <?= isset($form_data['declaration']) ? 'checked' : '' ?>>
             Je certifie que les informations fournies sont exactes et complètes
           </label>
+          <div class="error-message" id="error-declaration"></div>
         </div>
         
         <div class="form-group">
           <label class="required">
-            <input type="checkbox" name="conditions" required>
+            <input type="checkbox" name="conditions" required <?= isset($form_data['conditions']) ? 'checked' : '' ?>>
             J'accepte les conditions de traitement de mes données personnelles
           </label>
+          <div class="error-message" id="error-conditions"></div>
         </div>
       </div>
 
       <!-- Bouton -->
       <div class="form-section" style="text-align: center;">
-        <button type="submit" class="btn-submit"><i class="fas fa-paper-plane"></i> Soumettre la demande</button>
+        <button type="submit" class="btn-submit" id="submit-btn">
+          <i class="fas fa-paper-plane"></i> Soumettre la demande
+        </button>
       </div>
     </form>
   </div>
   
   <footer>
-    <p>© 2025 Babylone Service. Tous droits réservés.</p>
+    <p>© <?= date('Y') ?> Babylone Service. Tous droits réservés.</p>
   </footer>
 </div>
 
 <script>
+// Configuration
+const MAX_FILE_SIZE = <?= MAX_FILE_SIZE ?>; // Récupérer depuis PHP
+
 // Fonction pour valider le formulaire
 function validateForm() {
-    const type = document.getElementById("visa_type").value;
-    if (!type) {
-        alert("Veuillez sélectionner un type de visa");
-        return false;
-    }
+    let isValid = true;
     
-    // Validation des emails
+    // Valider tous les champs requis
+    const requiredFields = document.querySelectorAll('input[required], select[required]');
+    requiredFields.forEach(field => {
+        if (!field.value.trim() && field.type !== 'checkbox') {
+            showError(field, 'Ce champ est obligatoire');
+            isValid = false;
+        }
+        
+        if (field.type === 'checkbox' && !field.checked) {
+            showError(field, 'Vous devez accepter cette condition');
+            isValid = false;
+        }
+    });
+    
+    // Validation email
     const email = document.querySelector("input[name='email']");
-    if (email && !isValidEmail(email.value)) {
-        alert("Veuillez entrer une adresse email valide");
-        email.focus();
-        return false;
+    if (email && email.value && !isValidEmail(email.value)) {
+        showError(email, 'Veuillez entrer une adresse email valide');
+        isValid = false;
     }
     
     // Validation email hôte si présent
     const emailHote = document.querySelector("input[name='email_hote']");
     if (emailHote && emailHote.value && !isValidEmail(emailHote.value)) {
-        alert("Veuillez entrer une adresse email valide pour l'hôte");
-        emailHote.focus();
-        return false;
+        showError(emailHote, 'Veuillez entrer une adresse email valide pour l\'hôte');
+        isValid = false;
     }
     
     // Validation des dates
     const dateExpiration = document.querySelector("input[name='date_expiration']");
-    if (dateExpiration && new Date(dateExpiration.value) <= new Date()) {
-        alert("La date d'expiration du passeport doit être dans le futur");
-        dateExpiration.focus();
-        return false;
-    }
-    
-    // Validation de la date de naissance
-    const dateNaissance = document.querySelector("input[name='date_naissance']");
-    if (dateNaissance && new Date(dateNaissance.value) >= new Date()) {
-        alert("La date de naissance doit être dans le passé");
-        dateNaissance.focus();
-        return false;
+    if (dateExpiration && dateExpiration.value) {
+        const expirationDate = new Date(dateExpiration.value);
+        if (expirationDate <= new Date()) {
+            showError(dateExpiration, 'La date d\'expiration doit être dans le futur');
+            isValid = false;
+        }
     }
     
     // Validation des fichiers
@@ -987,20 +1507,110 @@ function validateForm() {
     for (let input of fileInputs) {
         if (input.files.length > 0) {
             for (let file of input.files) {
-                if (file.size > 5 * 1024 * 1024) {
-                    alert(`Le fichier ${file.name} est trop volumineux (max 5MB)`);
-                    return false;
+                if (file.size > MAX_FILE_SIZE) {
+                    alert(`Le fichier ${file.name} est trop volumineux (max ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+                    isValid = false;
+                    break;
+                }
+                
+                // Vérifier l'extension
+                const allowedExtensions = /(\.pdf|\.jpg|\.jpeg|\.png)$/i;
+                if (!allowedExtensions.exec(file.name)) {
+                    alert(`Le fichier ${file.name} n'a pas une extension autorisée (PDF, JPG, PNG)`);
+                    isValid = false;
+                    break;
                 }
             }
+        }
+    }
+    
+    // Si valide, désactiver le bouton pour éviter les double-clics
+    if (isValid) {
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement en cours...';
+    }
+    
+    return isValid;
+}
+
+// Validation en temps réel
+function validateField(field) {
+    const errorElement = document.getElementById(`error-${field.name}`);
+    
+    // Réinitialiser l'erreur
+    field.classList.remove('error');
+    if (errorElement) errorElement.style.display = 'none';
+    
+    // Validation spécifique par type
+    if (field.hasAttribute('required') && !field.value.trim()) {
+        showError(field, 'Ce champ est obligatoire');
+        return false;
+    }
+    
+    if (field.type === 'email' && field.value && !isValidEmail(field.value)) {
+        showError(field, 'Email invalide');
+        return false;
+    }
+    
+    if (field.type === 'tel' && field.value && !isValidPhone(field.value)) {
+        showError(field, 'Téléphone invalide');
+        return false;
+    }
+    
+    if (field.name === 'num_passeport' && field.value && !/^[A-Z0-9]{6,12}$/.test(field.value)) {
+        showError(field, 'Format invalide (6-12 caractères alphanumériques majuscules)');
+        return false;
+    }
+    
+    return true;
+}
+
+function validateDates(dateField) {
+    const dateDelivrance = document.querySelector("input[name='date_delivrance']");
+    const dateExpiration = document.querySelector("input[name='date_expiration']");
+    
+    if (dateDelivrance.value && dateExpiration.value) {
+        const delivrance = new Date(dateDelivrance.value);
+        const expiration = new Date(dateExpiration.value);
+        
+        if (delivrance >= expiration) {
+            showError(dateExpiration, 'La date d\'expiration doit être postérieure à la date de délivrance');
+            return false;
         }
     }
     
     return true;
 }
 
+function validateFileSize(fileInput) {
+    for (let file of fileInput.files) {
+        if (file.size > MAX_FILE_SIZE) {
+            alert(`Le fichier ${file.name} est trop volumineux (max ${MAX_FILE_SIZE / 1024 / 1024}MB)`);
+            fileInput.value = '';
+            return false;
+        }
+    }
+    return true;
+}
+
+function showError(field, message) {
+    field.classList.add('error');
+    const errorElement = document.getElementById(`error-${field.name}`);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+}
+
 function isValidEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
+}
+
+function isValidPhone(phone) {
+    const re = /^[+]?[0-9\s\-\(\)]{10,20}$/;
+    return re.test(phone);
 }
 
 // Fonction pour initialiser l'état des sections conditionnelles
@@ -1011,10 +1621,22 @@ function initConditionalSections() {
   toggleVisaFields();
   
   // Si on a déjà des visas, générer les champs
-  <?php if (isset($_POST['nb_visas']) && $_POST['nb_visas'] > 0): ?>
-    document.getElementById("nb_visas").value = <?php echo intval($_POST['nb_visas']); ?>;
+  const nbVisas = parseInt(document.getElementById("nb_visas").value) || 0;
+  if (nbVisas > 0) {
     generateVisaInputs();
-  <?php endif; ?>
+  }
+  
+  // Initialiser les compteurs de caractères
+  document.querySelectorAll('textarea[maxlength]').forEach(textarea => {
+    updateCharCounter(textarea);
+  });
+  
+  // Activer la validation en temps réel
+  document.querySelectorAll('input, select, textarea').forEach(field => {
+    field.addEventListener('blur', function() {
+      validateField(this);
+    });
+  });
 }
 
 function toggleVisaType() {
@@ -1044,7 +1666,8 @@ function toggleVisaFields() {
   const select = document.querySelector("select[name='voyages_precedents']");
   const details = document.getElementById("details_visa");
   if (select) {
-    details.style.display = (select.value === "oui") ? "block" : "none";
+    const isVisible = select.value === "oui";
+    details.style.display = isVisible ? "block" : "none";
     // Mettre à jour le champ hidden pour a_deja_visa
     document.getElementById("a_deja_visa").value = select.value;
   }
@@ -1059,8 +1682,9 @@ function generateVisaInputs() {
     const div = document.createElement("div");
     div.classList.add("form-group");
     div.innerHTML = `<label>Copie du visa n°${i}</label>
-                     <input type="file" name="copies_visas[]" class="file-input" accept=".pdf,.jpg,.png">
-                     <span class="file-hint">Copie du visa précédent (PDF, JPG, PNG - max 5MB)</span>`;
+                     <input type="file" name="copies_visas[]" class="file-input" 
+                            accept=".pdf,.jpg,.png" onchange="validateFileSize(this)">
+                     <span class="file-hint">Copie du visa précédent (PDF, JPG, PNG - max ${MAX_FILE_SIZE / 1024 / 1024}MB)</span>`;
     container.appendChild(div);
   }
 }
@@ -1076,10 +1700,35 @@ function updateProgressBar() {
   }
 }
 
+function updateCharCounter(textarea) {
+  const counterId = textarea.name + '-counter';
+  const counter = document.getElementById(counterId);
+  if (counter) {
+    counter.textContent = textarea.value.length + '/' + textarea.maxLength;
+  }
+}
+
 // Mettre à jour la progression lors de la saisie
 document.addEventListener('input', function(e) {
   if (e.target.matches('input, select, textarea')) {
     updateProgressBar();
+  }
+});
+
+// Empêcher la double soumission
+let formSubmitted = false;
+document.getElementById('visa-form').addEventListener('submit', function(e) {
+  if (formSubmitted) {
+    e.preventDefault();
+    return false;
+  }
+  
+  if (validateForm()) {
+    formSubmitted = true;
+    return true;
+  } else {
+    e.preventDefault();
+    return false;
   }
 });
 

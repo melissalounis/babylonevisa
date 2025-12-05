@@ -84,7 +84,7 @@
   </div>
 </footer>
 
-<script src="/babylone/assets/js/script.js"></script>
+<script src="../assets/js/script.js"></script>
 </body>
 </html>
 

@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config.php';
-$page_title = "Destinations Immigration - Babylone Service";
+$page_title = "Destinations - Babylone Service";
 include __DIR__ . '/../../includes/header.php';
 ?>
 
@@ -34,14 +34,20 @@ include __DIR__ . '/../../includes/header.php';
         }
     }
     
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
     @keyframes gradientShift {
         0% { background-position: 0% 50%; }
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
     
-    /* --- Hero Section spécialisée Immigration --- */
-    .immigration-hero {
+    /* --- Hero Section améliorée --- */
+    .procedure-hero {
         position: relative;
         height: 70vh;
         display: flex;
@@ -50,13 +56,14 @@ include __DIR__ . '/../../includes/header.php';
         color: white;
         text-align: center;
         overflow: hidden;
-        background: url('../images/immigration.jpg');
         background-size: 400% 400%;
         animation: gradientShift 15s ease infinite;
         margin-top: -40px;
+        background:url('../images/etudiant.avif');
+
     }
     
-    .immigration-hero-overlay {
+    .procedure-hero-overlay {
         position: absolute;
         top: 0;
         left: 0;
@@ -66,14 +73,14 @@ include __DIR__ . '/../../includes/header.php';
         z-index: 1;
     }
     
-    .immigration-hero-content {
+    .procedure-hero-content {
         max-width: 900px;
         padding: 0 20px;
         z-index: 2;
         animation: fadeInUp 1s ease-out;
     }
     
-    .immigration-hero-content h1 {
+    .procedure-hero-content h1 {
         font-size: 3.5rem;
         margin-bottom: 20px;
         font-weight: 800;
@@ -81,7 +88,7 @@ include __DIR__ . '/../../includes/header.php';
         letter-spacing: -0.5px;
     }
     
-    .immigration-hero-content p {
+    .procedure-hero-content p {
         font-size: 1.5rem;
         margin-bottom: 30px;
         font-weight: 300;
@@ -91,8 +98,8 @@ include __DIR__ . '/../../includes/header.php';
         line-height: 1.6;
     }
     
-    /* Stats Section pour immigration */
-    .immigration-stats {
+    /* Stats Section nouvelle */
+    .stats-section {
         padding: 60px 20px;
         background: var(--white);
         text-align: center;
@@ -111,7 +118,6 @@ include __DIR__ . '/../../includes/header.php';
         background: var(--light-blue);
         border-radius: var(--border-radius);
         transition: var(--transition);
-        border-left: 4px solid var(--primary-blue);
     }
     
     .stat-item:hover {
@@ -133,38 +139,9 @@ include __DIR__ . '/../../includes/header.php';
         font-weight: 600;
     }
     
-    /* Filtres améliorés pour immigration */
-    .immigration-filters {
-        display: flex;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 15px;
-        margin-bottom: 50px;
-        padding: 0 20px;
-    }
-    
-    .immigration-filter-btn {
-        padding: 12px 25px;
-        background: var(--white);
-        color: var(--primary-blue);
-        border: 2px solid var(--primary-blue);
-        border-radius: 50px;
-        cursor: pointer;
-        transition: var(--transition);
-        font-weight: 600;
-        font-size: 1rem;
-    }
-    
-    .immigration-filter-btn:hover, 
-    .immigration-filter-btn.active {
-        background: var(--primary-blue);
-        color: var(--white);
-        transform: translateY(-2px);
-    }
-    
-    /* Countries Section améliorée pour immigration */
-    .immigration-countries-section {
-        padding: 80px 20px;
+    /* Process Section améliorée */
+    .process-section {
+        padding: 100px 20px;
         background: var(--light-blue);
         text-align: center;
     }
@@ -190,113 +167,16 @@ include __DIR__ . '/../../includes/header.php';
         border-radius: 2px;
     }
     
-    .immigration-countries {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 30px;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 0 20px;
-    }
-    
-    .immigration-country {
-        height: 220px;
-        border-radius: var(--border-radius);
-        background-size: cover;
-        background-position: center;
-        position: relative;
-        overflow: hidden;
-        cursor: pointer;
-        transition: var(--transition);
-        text-decoration: none;
-        color: var(--white);
-        display: block;
-        box-shadow: var(--box-shadow);
-        border: 3px solid transparent;
-    }
-    
-    .immigration-country::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(to top, rgba(26, 95, 122, 0.9) 0%, rgba(26, 95, 122, 0.4) 50%, rgba(26, 95, 122, 0.2) 100%);
-        border-radius: var(--border-radius);
-        transition: var(--transition);
-    }
-    
-    .immigration-country-label {
-        position: absolute;
-        bottom: 20px;
-        left: 20px;
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 700;
-        font-size: 1.3rem;
-        transition: var(--transition);
-        text-align: left;
-    }
-    
-    .flag-icon {
-        border-radius: 6px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        transition: var(--transition);
-        width: 40px;
-        height: 30px;
-        object-fit: cover;
-    }
-    
-    .immigration-info {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        z-index: 2;
-        background: rgba(255, 255, 255, 0.9);
-        color: var(--primary-blue);
-        padding: 8px 15px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        transition: var(--transition);
-    }
-    
-    .immigration-country:hover {
-        transform: translateY(-10px) scale(1.03);
-        box-shadow: var(--box-shadow-hover);
-        border-color: var(--accent-green);
-    }
-    
-    .immigration-country:hover::after {
-        background: linear-gradient(to top, rgba(46, 204, 113, 0.9) 0%, rgba(46, 204, 113, 0.5) 50%, rgba(46, 204, 113, 0.3) 100%);
-    }
-    
-    .immigration-country:hover .flag-icon {
-        transform: scale(1.2) rotate(5deg);
-    }
-    
-    .immigration-country:hover .immigration-info {
-        background: var(--accent-green);
-        color: var(--white);
-    }
-    
-    /* Processus Immigration */
-    .immigration-process {
-        padding: 100px 20px;
-        background: var(--white);
-        text-align: center;
-    }
-    
     .process-steps {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 30px;
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 0 auto;
     }
     
     .process-step {
-        background: var(--light-blue);
+        background: var(--white);
         padding: 40px 30px;
         border-radius: var(--border-radius);
         text-align: center;
@@ -317,8 +197,13 @@ include __DIR__ . '/../../includes/header.php';
     }
     
     .process-step:hover {
-        transform: translateY(-5px);
+        transform: translateY(-10px);
         box-shadow: var(--box-shadow-hover);
+    }
+    
+    .process-step:hover i {
+        animation: pulse 1s ease-in-out;
+        color: var(--accent-green);
     }
     
     .step-number {
@@ -348,11 +233,6 @@ include __DIR__ . '/../../includes/header.php';
         transition: var(--transition);
     }
     
-    .process-step:hover i {
-        color: var(--accent-green);
-        transform: scale(1.1);
-    }
-    
     .process-step h3 {
         font-size: 1.4rem;
         margin-bottom: 15px;
@@ -365,8 +245,132 @@ include __DIR__ . '/../../includes/header.php';
         font-size: 1rem;
     }
     
-    /* CTA Section améliorée */
-    .immigration-cta {
+    /* Countries Section améliorée */
+    .countries-section {
+        padding: 100px 20px;
+        background: var(--white);
+        text-align: center;
+    }
+    
+    .filters {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 50px;
+        padding: 0 20px;
+    }
+    
+    .filter-btn {
+        padding: 12px 25px;
+        background: var(--white);
+        color: var(--primary-blue);
+        border: 2px solid var(--primary-blue);
+        border-radius: 50px;
+        cursor: pointer;
+        transition: var(--transition);
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    .filter-btn:hover, .filter-btn.active {
+        background: var(--primary-blue);
+        color: var(--white);
+        transform: translateY(-2px);
+    }
+    
+    .countries {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 30px;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    
+    .country {
+        height: 200px;
+        border-radius: var(--border-radius);
+        background-size: cover;
+        background-position: center;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        transition: var(--transition);
+        text-decoration: none;
+        color: var(--white);
+        display: block;
+        box-shadow: var(--box-shadow);
+        border: 3px solid transparent;
+    }
+    
+    .country::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(26, 95, 122, 0.9) 0%, rgba(26, 95, 122, 0.4) 50%, rgba(26, 95, 122, 0.2) 100%);
+        border-radius: var(--border-radius);
+        transition: var(--transition);
+    }
+    
+    .country-label {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        font-size: 1.3rem;
+        transition: var(--transition);
+        text-align: left;
+    }
+    
+    .flag-icon {
+        border-radius: 6px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        transition: var(--transition);
+        width: 40px;
+        height: 30px;
+        object-fit: cover;
+    }
+    
+    .country-duration {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 2;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--primary-blue);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        transition: var(--transition);
+    }
+    
+    .country:hover {
+        transform: translateY(-10px) scale(1.03);
+        box-shadow: var(--box-shadow-hover);
+        border-color: var(--accent-green);
+    }
+    
+    .country:hover::after {
+        background: linear-gradient(to top, rgba(46, 204, 113, 0.9) 0%, rgba(46, 204, 113, 0.5) 50%, rgba(46, 204, 113, 0.3) 100%);
+    }
+    
+    .country:hover .flag-icon {
+        transform: scale(1.2) rotate(5deg);
+    }
+    
+    .country:hover .country-duration {
+        background: var(--accent-green);
+        color: var(--white);
+    }
+    
+    /* Info Section améliorée */
+    .info-section {
         padding: 100px 20px;
         background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
         color: var(--white);
@@ -374,7 +378,7 @@ include __DIR__ . '/../../includes/header.php';
         position: relative;
     }
     
-    .immigration-cta::before {
+    .info-section::before {
         content: '';
         position: absolute;
         top: 0;
@@ -384,20 +388,20 @@ include __DIR__ . '/../../includes/header.php';
         background: rgba(0, 0, 0, 0.1);
     }
     
-    .cta-content {
+    .info-content {
         max-width: 800px;
         margin: 0 auto;
         position: relative;
         z-index: 2;
     }
     
-    .immigration-cta h2 {
+    .info-content h2 {
         font-size: 2.5rem;
         margin-bottom: 20px;
         font-weight: 700;
     }
     
-    .immigration-cta p {
+    .info-content p {
         font-size: 1.2rem;
         line-height: 1.7;
         margin-bottom: 40px;
@@ -428,17 +432,21 @@ include __DIR__ . '/../../includes/header.php';
     
     /* --- Responsive amélioré --- */
     @media (max-width: 1200px) {
-        .immigration-countries {
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        .countries {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+        
+        .process-steps {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
     }
     
     @media (max-width: 992px) {
-        .immigration-hero-content h1 {
+        .procedure-hero-content h1 {
             font-size: 2.8rem;
         }
         
-        .immigration-hero-content p {
+        .procedure-hero-content p {
             font-size: 1.2rem;
         }
         
@@ -448,11 +456,12 @@ include __DIR__ . '/../../includes/header.php';
     }
     
     @media (max-width: 768px) {
-        .immigration-hero {
+        .procedure-hero {
             height: 60vh;
-        }
+            background:url('../images/etudiant.avif');
+              }
         
-        .immigration-hero-content h1 {
+        .procedure-hero-content h1 {
             font-size: 2.2rem;
         }
         
@@ -460,58 +469,64 @@ include __DIR__ . '/../../includes/header.php';
             font-size: 2rem;
         }
         
-        .immigration-countries {
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        .process-steps {
+            grid-template-columns: 1fr;
         }
         
-        .immigration-country {
-            height: 200px;
+        .countries {
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        }
+        
+        .country {
+            height: 180px;
         }
         
         .stats-container {
             grid-template-columns: 1fr;
         }
+    }
+    
+    @media (max-width: 576px) {
+        .procedure-hero {
+            height: 50vh;
+            background:url('../images/etudiant.avif');
+
+        }
         
-        .immigration-filters {
+        .procedure-hero-content h1 {
+            font-size: 1.8rem;
+        }
+        
+        .procedure-hero-content p {
+            font-size: 1rem;
+        }
+        
+        .countries {
+            grid-template-columns: 1fr;
+        }
+        
+        .filters {
             flex-direction: column;
             align-items: center;
         }
         
-        .immigration-filter-btn {
+        .filter-btn {
             width: 200px;
         }
-    }
-    
-    @media (max-width: 576px) {
-        .immigration-hero {
-            height: 50vh;
-        }
         
-        .immigration-hero-content h1 {
-            font-size: 1.8rem;
-        }
-        
-        .immigration-hero-content p {
-            font-size: 1rem;
-        }
-        
-        .immigration-countries {
-            grid-template-columns: 1fr;
-        }
-        
-        .immigration-country-label {
+        .country-label {
             font-size: 1.1rem;
         }
     }
 </style>
 
 <script>
-    // JavaScript amélioré pour l'immigration
+    // JavaScript amélioré avec plus de fonctionnalités
     document.addEventListener('DOMContentLoaded', function() {
-        const filterButtons = document.querySelectorAll('.immigration-filter-btn');
-        const countries = document.querySelectorAll('.immigration-country');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const countries = document.querySelectorAll('.country');
         
-        // Filtrage des pays par type de programme
+        // Filtrage des pays
         filterButtons.forEach(button => {
             button.addEventListener('click', function() {
                 // Animation des boutons
@@ -535,8 +550,8 @@ include __DIR__ . '/../../includes/header.php';
                                 country.style.transform = 'translateY(0) scale(1)';
                             }, 50);
                         } else {
-                            const countryType = country.getAttribute('data-type');
-                            if (countryType === filter) {
+                            const countryRegion = country.getAttribute('data-region');
+                            if (countryRegion === filter) {
                                 country.style.display = 'block';
                                 setTimeout(() => {
                                     country.style.opacity = '1';
@@ -571,74 +586,76 @@ include __DIR__ . '/../../includes/header.php';
         }, observerOptions);
         
         // Observer les éléments à animer
-        document.querySelectorAll('.process-step, .immigration-country, .stat-item').forEach(el => {
+        document.querySelectorAll('.process-step, .country, .stat-item').forEach(el => {
             el.style.opacity = '0';
             el.style.transform = 'translateY(30px)';
             el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
             observer.observe(el);
         });
+        
+        // Navigation fluide améliorée
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    const offsetTop = targetElement.offsetTop - 80;
+                    
+                    window.scrollTo({
+                        top: offsetTop,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
     });
 </script>
 
-<!-- Hero Section spécialisée Immigration -->
-<section class="immigration-hero">
-    <div class="immigration-hero-overlay"></div>
-    <div class="immigration-hero-content">
-        <h1>Destinations d'Immigration</h1>
-        <p>Démarrez votre nouvelle vie à l'étranger avec notre accompagnement expert</p>
+<!-- Hero Section améliorée -->
+<section class="procedure-hero">
+    <div class="procedure-hero-overlay"></div>
+    <div class="procedure-hero-content">
+        <h1>Procédures d'Études à l'Étranger</h1>
+        <p>Votre guide étape par étape pour concrétiser votre projet d'études à l'international</p>
     </div>
 </section>
 
-<!-- Section Statistiques Immigration -->
-<section class="immigration-stats">
-    <div class="stats-container">
-        <div class="stat-item">
-            <span class="stat-number">85%</span>
-            <span class="stat-label">Taux de Réussite</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">15+</span>
-            <span class="stat-label">Pays d'Accueil</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">1000+</span>
-            <span class="stat-label">Dossiers Traités</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-number">24h</span>
-            <span class="stat-label">Évaluation Gratuite</span>
-        </div>
-    </div>
-</section>
+<!
 
-<!-- Filtres par type d'immigration -->
-<section class="immigration-countries-section">
+<!-- PAYS Section améliorée -->
+<section class="countries-section">
+    <h2 class="section-title">Explorez Nos Destinations</h2>
     
+    <!-- Filtres par région -->
+    <div class="filters">
+        <button class="filter-btn active" data-filter="all">Toutes les destinations</button>
+        <button class="filter-btn" data-filter="europe">Europe</button>
+        <button class="filter-btn" data-filter="amerique">Amérique</button>
+    </div>
     
-    <div class="immigration-countries">
-        <!-- Canada -->
-        <a href="../../public/canada/immigration/immigration.php" class="immigration-country" 
-           style="background-image: url('../images/canada.jpg');" 
-           data-type="travail">
-            <div class="immigration-country-label">
+    <div class="countries">
+        <!-- Europe -->
+        <a href="../../public/usa/immigration/immigration.php" class="country" style="background-image:url('../images/usa.jpg');" data-region="europe">
+      
+            <div class="country-label">
+                <img class="flag-icon" src="https://flagcdn.com/w40/us.png" alt="Drapeau usa">
+                <span>USA</span>
+            </div>
+        </a>
+
+        <a href="../../public/canada/immigration/immigration.php" class="country" style="background-image: url('../images/canada.jpg');" data-region="amerique">
+        
+            <div class="country-label">
                 <img src="https://flagcdn.com/w40/ca.png" class="flag-icon" alt="Drapeau Canada">
                 <span>Canada</span>
             </div>
         </a>
 
-        <!-- USA -->
-        <a href="../../public/usa/immigration/immigration.php" class="immigration-country" 
-           style="background-image: url('../images/USA.jpg');" 
-           data-type="travail">
-            <div class="immigration-country-label">
-                <img src="https://flagcdn.com/w40/us.png" class="flag-icon" alt="Drapeau USA">
-                <span>États-Unis</span>
-            </div>
-        </a>
 
-        
-      
-        
     </div>
 </section>
 

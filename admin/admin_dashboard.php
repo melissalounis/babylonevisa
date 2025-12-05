@@ -6,22 +6,26 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 
-// Connexion BDD
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
+// Inclure le fichier de configuration
+include '../config.php';
 
-try {
-    $db = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false
-    ]);
-} catch(PDOException $e) {
-    error_log("Erreur connexion BDD: " . $e->getMessage());
-    die("Erreur de connexion à la base de données.");
+// Vérifier et utiliser la connexion existante depuis config.php
+if (!isset($pdo)) {
+    // Si $pdo n'existe pas dans config.php, créer une nouvelle connexion
+    try {
+        $pdo = new PDO("mysql:host=localhost;dbname=babylone_service;charset=utf8", "root", "", [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false
+        ]);
+    } catch(PDOException $e) {
+        error_log("Erreur connexion BDD: " . $e->getMessage());
+        die("Erreur de connexion à la base de données.");
+    }
 }
+
+// Utiliser $pdo pour toutes les opérations (créer un alias $db pour la compatibilité)
+$db = $pdo;
 
 // Vérification admin
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
@@ -1685,3 +1689,13 @@ $total_general_demandes = $total_en_attente + $total_en_cours + $total_traitee +
             mainContent.style.overflowY = 'auto';
             
             // Forcer l'affichage des scrollbars si le contenu dépasse
+            if (sidebar.scrollHeight > sidebar.clientHeight) {
+                sidebar.style.overflowY = 'scroll';
+            }
+            if (mainContent.scrollHeight > mainContent.clientHeight) {
+                mainContent.style.overflowY = 'scroll';
+            }
+        });
+    </script>
+</body>
+</html>

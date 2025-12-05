@@ -406,11 +406,7 @@
         }
         
         // Connexion à la base de données
-        $host = 'localhost';
-        $dbname = 'babylone_Service';
-        $username = 'root';
-        $password = '';
-        
+       require_once '../config.php';
         // Initialiser les variables
         $mode_detail = false;
         $reference_detail = '';
@@ -422,8 +418,7 @@
         $offset = ($page - 1) * $limit;
         
         try {
-            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+           
             
             // Vérifier si on est en mode détail
             $mode_detail = isset($_GET['reference']) && !empty($_GET['reference']);

@@ -3,20 +3,9 @@
 session_start();
 
 // Configuration DB
-define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'babylone_service');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_CHARSET', 'utf8mb4');
 
-try {
-    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-    $pdo = new PDO($dsn, DB_USER, DB_PASS, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
-} catch (PDOException $e) {
-    die("Erreur connexion : " . $e->getMessage());
-}
+
+require_once __DIR__ . '../../../config.php';
 
 // Récupérer les demandes
 $demandes = [];

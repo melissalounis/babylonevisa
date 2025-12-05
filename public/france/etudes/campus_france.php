@@ -1,16 +1,16 @@
 <?php
 session_start();
 
+// Vérifier si l'utilisateur est connecté
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
 // Connexion BDD
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
+require_once __DIR__ . '/../../../config.php';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 🔹 Champs obligatoires pour Campus France
@@ -57,12 +57,20 @@ try {
             $tests_francais     = $_POST['tests_francais'] ?? 'non';
             $score_test         = $_POST['score_test'] ?? '';
             
-            // 🔹 Nouvelles données
+            // 🔹 Nouvelles données pour tests de langue
+            $test_francais_file = $_FILES['test_francais_file'] ?? null;
             $test_anglais       = $_POST['test_anglais'] ?? 'non';
             $score_anglais      = $_POST['score_anglais'] ?? '';
+            $test_anglais_file  = $_FILES['test_anglais_file'] ?? null;
+            
+            // 🔹 Données pour la boîte Pastel
             $boite_pastel       = $_POST['boite_pastel'] ?? 'non';
             $email_pastel       = $_POST['email_pastel'] ?? '';
             $mdp_pastel         = $_POST['mdp_pastel'] ?? '';
+            
+            // 🔹 Données pour le visa
+            $has_visa           = $_POST['has_visa'] ?? 'non';
+            $visa_file          = $_FILES['visa_file'] ?? null;
             
             // 🔹 Récupération des relevés par année
             $releves_annees = [];
@@ -92,22 +100,21 @@ try {
             
             $user_id = $_SESSION['user_id'] ?? 0;
 
-            // 🔹 CORRECTION : Ajout du champ manquant 'niveau_francais' dans la requête
+            // 🔹 Préparation de la requête SQL avec tous les nouveaux champs
             $stmt = $pdo->prepare("INSERT INTO demandes_campus_france 
                 (user_id, pays_etudes, niveau_etudes, domaine_etudes, nom, prenom, 
                 date_naissance, lieu_naissance, nationalite, adresse, telephone, email, 
                 num_passeport, date_delivrance, date_expiration, niveau_francais, 
                 tests_francais, score_test, test_anglais, score_anglais, boite_pastel,
-                email_pastel, mdp_pastel, releves_annees, autres_documents, statut, date_soumission) 
+                email_pastel, mdp_pastel, has_visa, releves_annees, autres_documents, statut, date_soumission) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'en_attente', NOW())");
             
-            // 🔹 CORRECTION : Ajout de la variable $niveau_francais dans le tableau d'exécution
             $stmt->execute([
                 $user_id, $pays_etudes, $niveau_etudes, $domaine_etudes, $nom, $prenom,
                 $date_naissance, $lieu_naissance, $nationalite, $adresse, $telephone, $email,
                 $num_passeport, $date_delivrance, $date_expiration, $niveau_francais,
                 $tests_francais, $score_test, $test_anglais, $score_anglais, $boite_pastel,
-                $email_pastel, $mdp_pastel, $releves_annees_json, $autres_documents_json
+                $email_pastel, $mdp_pastel, $has_visa, $releves_annees_json, $autres_documents_json
             ]);
 
             $demande_id = $pdo->lastInsertId();
@@ -153,12 +160,17 @@ try {
             }
 
             // 🔹 Traitement fichiers conditionnels
-            if ($tests_francais !== 'non' && isset($_FILES['attestation_francais']) && !empty($_FILES['attestation_francais']['name'])) {
-                saveFile($_FILES['attestation_francais'], 'attestation_francais', $demande_id, $pdo, $uploadDir);
+            if ($tests_francais !== 'non' && isset($_FILES['test_francais_file']) && !empty($_FILES['test_francais_file']['name'])) {
+                saveFile($_FILES['test_francais_file'], 'test_francais', $demande_id, $pdo, $uploadDir);
             }
             
-            if ($test_anglais !== 'non' && isset($_FILES['attestation_anglais']) && !empty($_FILES['attestation_anglais']['name'])) {
-                saveFile($_FILES['attestation_anglais'], 'attestation_anglais', $demande_id, $pdo, $uploadDir);
+            if ($test_anglais !== 'non' && isset($_FILES['test_anglais_file']) && !empty($_FILES['test_anglais_file']['name'])) {
+                saveFile($_FILES['test_anglais_file'], 'test_anglais', $demande_id, $pdo, $uploadDir);
+            }
+
+            // 🔹 Traitement du visa
+            if ($has_visa === 'oui' && isset($_FILES['visa_file']) && !empty($_FILES['visa_file']['name'])) {
+                saveFile($_FILES['visa_file'], 'visa', $demande_id, $pdo, $uploadDir);
             }
 
             // 🔹 Traitement fichiers des relevés par année
@@ -357,6 +369,27 @@ try {
       margin-right: 10px;
     }
     
+    .btn-secondary {
+      background: var(--accent-color);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      margin-top: 10px;
+      transition: var(--transition);
+    }
+    
+    .btn-secondary:hover {
+      background: #e55a2b;
+      transform: translateY(-2px);
+    }
+    
     .hidden {
       display: none;
     }
@@ -394,29 +427,28 @@ try {
       border: 1px solid var(--border-color);
     }
     
-    .test-rdv-link {
-      display: inline-block;
-      background: var(--accent-color);
-      color: white;
-      padding: 10px 20px;
-      border-radius: var(--border-radius);
-      text-decoration: none;
-      margin-top: 10px;
-      font-weight: 600;
-      transition: var(--transition);
-    }
-    
-    .test-rdv-link:hover {
-      background: #e55a2b;
-      transform: translateY(-2px);
-    }
-    
     .document-section {
       background: white;
       padding: 15px;
       border-radius: var(--border-radius);
       margin-bottom: 15px;
       border: 1px solid var(--border-color);
+    }
+    
+    .test-section {
+      background: #fff8e1;
+      padding: 15px;
+      border-radius: var(--border-radius);
+      margin-top: 15px;
+      border: 2px dashed #ffc107;
+    }
+    
+    .test-section h4 {
+      color: #ff9800;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     
     @media (max-width: 768px) {
@@ -434,48 +466,69 @@ try {
     function toggleTestFrancais() {
       const hasTest = document.getElementById("tests_francais").value;
       const scoreTestSection = document.getElementById("score_test_section");
+      const testFileSection = document.getElementById("test_francais_file_section");
       const rdvButton = document.getElementById("test_rdv_button");
+      const scoreTestInput = document.getElementById("score_test");
       
-      scoreTestSection.style.display = (hasTest !== "non") ? "block" : "none";
-      rdvButton.style.display = (hasTest === "non") ? "block" : "none";
+      if (hasTest !== "non") {
+        scoreTestSection.style.display = "block";
+        testFileSection.style.display = "block";
+        rdvButton.style.display = "none";
+        scoreTestInput.required = true;
+      } else {
+        scoreTestSection.style.display = "none";
+        testFileSection.style.display = "none";
+        rdvButton.style.display = "block";
+        scoreTestInput.required = false;
+      }
     }
-    // Dans votre formulaire d'inscription, modifiez la fonction saveFile :
-function saveFile($file, $type, $demande_id, $pdo, $uploadDir) {
-    if (!empty($file['name']) && $file['error'] === UPLOAD_ERR_OK) {
-        $filename = uniqid() . "_" . basename($file['name']);
-        $filepath = $uploadDir . $filename;
-        
-        if (move_uploaded_file($file['tmp_name'], $filepath)) {
-            // Enregistrer dans la table des fichiers
-            $stmt = $pdo->prepare("INSERT INTO demandes_campus_france_fichiers 
-                (demande_id, type_fichier, chemin_fichier, nom_original, taille_fichier, date_upload) 
-                VALUES (?, ?, ?, ?, ?, NOW())");
-            $stmt->execute([
-                $demande_id, 
-                $type, 
-                $filename, 
-                $file['name'],
-                $file['size']
-            ]);
-            return true;
-        }
-    }
-    return false;
-}
     
     function toggleTestAnglais() {
       const hasTest = document.getElementById("test_anglais").value;
-      document.getElementById("score_anglais_section").style.display = (hasTest !== "non") ? "block" : "none";
+      const scoreTestSection = document.getElementById("score_anglais_section");
+      const testFileSection = document.getElementById("test_anglais_file_section");
+      const rdvButton = document.getElementById("test_anglais_rdv_button");
+      const scoreTestInput = document.getElementById("score_anglais");
+      
+      if (hasTest !== "non") {
+        scoreTestSection.style.display = "block";
+        testFileSection.style.display = "block";
+        rdvButton.style.display = "none";
+        scoreTestInput.required = true;
+      } else {
+        scoreTestSection.style.display = "none";
+        testFileSection.style.display = "none";
+        rdvButton.style.display = "block";
+        scoreTestInput.required = false;
+      }
     }
     
     function toggleBoitePastel() {
       const hasBoite = document.getElementById("boite_pastel").value;
-      document.getElementById("boite_pastel_section").style.display = (hasBoite === "oui") ? "block" : "none";
+      const boiteSection = document.getElementById("boite_pastel_section");
+      
+      if (hasBoite === "oui") {
+        boiteSection.style.display = "block";
+        document.getElementById("email_pastel").required = true;
+        document.getElementById("mdp_pastel").required = true;
+      } else {
+        boiteSection.style.display = "none";
+        document.getElementById("email_pastel").required = false;
+        document.getElementById("mdp_pastel").required = false;
+      }
     }
     
-    function toggleAcceptation() {
-      const hasAcceptation = document.querySelector("select[name='has_acceptation']").value;
-      document.getElementById("acceptation_section").style.display = (hasAcceptation === "oui") ? "block" : "none";
+    function toggleVisa() {
+      const hasVisa = document.getElementById("has_visa").value;
+      const visaSection = document.getElementById("visa_section");
+      
+      if (hasVisa === "oui") {
+        visaSection.style.display = "block";
+        document.getElementById("visa_file").required = true;
+      } else {
+        visaSection.style.display = "none";
+        document.getElementById("visa_file").required = false;
+      }
     }
     
     function toggleRelevesAnnees() {
@@ -617,6 +670,46 @@ function saveFile($file, $type, $demande_id, $pdo, $uploadDir) {
         return false;
       }
       
+      // Validation des tests de langue si "oui"
+      const testsFrancais = document.getElementById("tests_francais").value;
+      if (testsFrancais !== "non") {
+        const scoreTest = document.getElementById("score_test");
+        if (!scoreTest.value.trim()) {
+          alert("Veuillez indiquer votre score au test de français.");
+          return false;
+        }
+      }
+      
+      const testAnglais = document.getElementById("test_anglais").value;
+      if (testAnglais !== "non") {
+        const scoreAnglais = document.getElementById("score_anglais");
+        if (!scoreAnglais.value.trim()) {
+          alert("Veuillez indiquer votre score au test d'anglais.");
+          return false;
+        }
+      }
+      
+      // Validation boîte Pastel si "oui"
+      const boitePastel = document.getElementById("boite_pastel").value;
+      if (boitePastel === "oui") {
+        const emailPastel = document.getElementById("email_pastel");
+        const mdpPastel = document.getElementById("mdp_pastel");
+        if (!emailPastel.value.trim() || !mdpPastel.value.trim()) {
+          alert("Veuillez remplir les coordonnées de votre boîte Pastel.");
+          return false;
+        }
+      }
+      
+      // Validation visa si "oui"
+      const hasVisa = document.getElementById("has_visa").value;
+      if (hasVisa === "oui") {
+        const visaFile = document.getElementById("visa_file");
+        if (!visaFile.files.length) {
+          alert("Veuillez télécharger une copie de votre visa.");
+          return false;
+        }
+      }
+      
       return true;
     }
   </script>
@@ -745,32 +838,35 @@ function saveFile($file, $type, $demande_id, $pdo, $uploadDir) {
       <!-- Niveau de français -->
       <div class="form-section">
         <h3><i class="fas fa-language"></i> Niveau de français</h3>
-       
+        
         <div class="form-group">
-          <label>Avez-vous passé un test de français ?</label>
-          <select id="tests_francais" name="tests_francais" onchange="toggleTestFrancais()">
-            <option value="non">Non</option>
-            <option value="tcf">TCF</option>
-            <option value="delf">DELF</option>
-            <option value="dalf">DALF</option>
-            <option value="autre">Autre</option>
+          <label class="required">Avez-vous passé un test de français ?</label>
+          <select id="tests_francais" name="tests_francais" required onchange="toggleTestFrancais()">
+            <option value="">-- Sélectionnez --</option>
+            <option value="non">Non, je n'ai pas encore passé de test</option>
+            <option value="tcf">Oui, TCF</option>
+            <option value="delf">Oui, DELF</option>
+            <option value="dalf">Oui, DALF</option>
+            <option value="autre">Autre test</option>
           </select>
         </div>
         
-        <div id="test_rdv_button" class="hidden">
-          <a href="/babylone/public/test_de_langue.php" class="test-rdv-link">
-            <i class="fas fa-calendar-check"></i> Demander un rendez-vous test de langue
+        <div id="test_rdv_button" class="test-section hidden">
+          <h4><i class="fas fa-calendar-check"></i> Demande de test de français</h4>
+          <p>Vous n'avez pas encore passé de test de français. Cliquez sur le bouton ci-dessous pour demander un rendez-vous.</p>
+          <a href="../../test_de_langue.php?langue=francais" class="btn-secondary">
+            <i class="fas fa-calendar-alt"></i> Demander un test de français
           </a>
         </div>
         
         <div id="score_test_section" class="conditional-section hidden">
           <div class="form-group">
-            <label>Score/Diplôme obtenu</label>
-            <input type="text" name="score_test" placeholder="Ex: B2, 450 points...">
+            <label class="required">Score/Diplôme obtenu</label>
+            <input type="text" id="score_test" name="score_test" placeholder="Ex: B2, 450 points...">
           </div>
-          <div class="form-group">
-            <label>Attestation de score/diplôme</label>
-            <input type="file" name="attestation_francais" class="file-input" accept=".pdf,.jpg,.png">
+          <div id="test_francais_file_section" class="form-group">
+            <label class="required">Attestation de score/diplôme</label>
+            <input type="file" name="test_francais_file" class="file-input" accept=".pdf,.jpg,.png">
             <span class="file-hint">Copie du diplôme ou attestation de score (max 5MB)</span>
           </div>
         </div>
@@ -779,26 +875,35 @@ function saveFile($file, $type, $demande_id, $pdo, $uploadDir) {
       <!-- Test d'anglais -->
       <div class="form-section">
         <h3><i class="fas fa-globe"></i> Test d'anglais</h3>
-       
+        
         <div class="form-group">
-          <label>Avez-vous passé un test d'anglais ?</label>
-          <select id="test_anglais" name="test_anglais" onchange="toggleTestAnglais()">
-            <option value="non">Non</option>
-            <option value="ielts">IELTS</option>
-            <option value="toefl">TOEFL</option>
-            <option value="toeic">TOEIC</option>
-            <option value="autre">Autre</option>
+          <label class="required">Avez-vous passé un test d'anglais ?</label>
+          <select id="test_anglais" name="test_anglais" required onchange="toggleTestAnglais()">
+            <option value="">-- Sélectionnez --</option>
+            <option value="non">Non, je n'ai pas encore passé de test</option>
+            <option value="ielts">Oui, IELTS</option>
+            <option value="toefl">Oui, TOEFL</option>
+            <option value="toeic">Oui, TOEIC</option>
+            <option value="autre">Autre test</option>
           </select>
+        </div>
+        
+        <div id="test_anglais_rdv_button" class="test-section hidden">
+          <h4><i class="fas fa-calendar-check"></i> Demande de test d'anglais</h4>
+          <p>Vous n'avez pas encore passé de test d'anglais. Cliquez sur le bouton ci-dessous pour demander un rendez-vous.</p>
+          <a href="../../test_de_langue.php?langue=anglais" class="btn-secondary">
+            <i class="fas fa-calendar-alt"></i> Demander un test d'anglais
+          </a>
         </div>
         
         <div id="score_anglais_section" class="conditional-section hidden">
           <div class="form-group">
-            <label>Score obtenu</label>
-            <input type="text" name="score_anglais" placeholder="Ex: 6.5, 85...">
+            <label class="required">Score obtenu</label>
+            <input type="text" id="score_anglais" name="score_anglais" placeholder="Ex: 6.5, 85...">
           </div>
-          <div class="form-group">
-            <label>Attestation de score</label>
-            <input type="file" name="attestation_anglais" class="file-input" accept=".pdf,.jpg,.png">
+          <div id="test_anglais_file_section" class="form-group">
+            <label class="required">Attestation de score</label>
+            <input type="file" name="test_anglais_file" class="file-input" accept=".pdf,.jpg,.png">
             <span class="file-hint">Copie de l'attestation de score (max 5MB)</span>
           </div>
         </div>
@@ -807,10 +912,11 @@ function saveFile($file, $type, $demande_id, $pdo, $uploadDir) {
       <!-- Boîte Pastel -->
       <div class="form-section">
         <h3><i class="fas fa-envelope"></i> Boîte Pastel</h3>
-       
+        
         <div class="form-group">
-          <label>Avez-vous déjà une boîte Pastel ?</label>
-          <select id="boite_pastel" name="boite_pastel" onchange="toggleBoitePastel()">
+          <label class="required">Avez-vous déjà une boîte Pastel ?</label>
+          <select id="boite_pastel" name="boite_pastel" required onchange="toggleBoitePastel()">
+            <option value="">-- Sélectionnez --</option>
             <option value="non">Non</option>
             <option value="oui">Oui</option>
           </select>
@@ -820,12 +926,34 @@ function saveFile($file, $type, $demande_id, $pdo, $uploadDir) {
           <div class="form-row">
             <div class="form-group">
               <label class="required">Email Pastel</label>
-              <input type="email" name="email_pastel" placeholder="votre.email@pastel.fr">
+              <input type="email" id="email_pastel" name="email_pastel" placeholder="votre.email@pastel.fr">
             </div>
             <div class="form-group">
               <label class="required">Mot de passe Pastel</label>
-              <input type="password" name="mdp_pastel" placeholder="Votre mot de passe">
+              <input type="password" id="mdp_pastel" name="mdp_pastel" placeholder="Votre mot de passe">
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visa -->
+      <div class="form-section">
+        <h3><i class="fas fa-stamp"></i> Visa</h3>
+        
+        <div class="form-group">
+          <label class="required">Avez-vous déjà un visa français ?</label>
+          <select id="has_visa" name="has_visa" required onchange="toggleVisa()">
+            <option value="">-- Sélectionnez --</option>
+            <option value="non">Non</option>
+            <option value="oui">Oui</option>
+          </select>
+        </div>
+        
+        <div id="visa_section" class="conditional-section hidden">
+          <div class="form-group">
+            <label class="required">Copie du visa</label>
+            <input type="file" id="visa_file" name="visa_file" class="file-input" accept=".pdf,.jpg,.png">
+            <span class="file-hint">Copie de votre visa français (max 5MB)</span>
           </div>
         </div>
       </div>
@@ -924,7 +1052,7 @@ function initConditionalSections() {
   toggleTestFrancais();
   toggleTestAnglais();
   toggleBoitePastel();
-  toggleAcceptation();
+  toggleVisa();
   toggleRelevesAnnees();
   genererChampsDocuments();
 }

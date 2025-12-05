@@ -1,10 +1,6 @@
 <?php
 // Connexion à la base de données
-$host = 'localhost';
-$dbname = 'babylone_Service';
-$username = 'root';
-$password = '';
-
+require_once __DIR__ . '../../../config.php';
 // Initialisation des variables
 $message_erreur = '';
 $message_success = '';
@@ -16,9 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     error_log("📨 METHODE POST DÉTECTÉE");
     
     try {
-        $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        error_log("✅ Connexion à la base de données réussie");
+        
         
         // Récupération des données du formulaire
         $nom = $_POST['lastname'] ?? '';

@@ -956,7 +956,7 @@ h1, h2, h3, h4, h5, h6 {
           <li><i class="fas fa-check-circle"></i> Bourses d'études</li>
         </ul>
         <div class="card-actions">
-          <a class="turquie-btn" href="etude/index2.php">
+          <a class="turquie-btn" href="etude/etudes.php">
             <span>Découvrir</span>
             <i class="fas fa-arrow-right"></i>
           </a>

@@ -364,77 +364,77 @@ include __DIR__ . '/../../includes/header.php';
     
     
     <div class="countries">
-        <a href="famille.php" class="country" style="background-image:url('../images/france.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image:url('../images/france.jpg');">
             <div class="country-label">
                 <img class="flag-icon" src="https://flagcdn.com/w40/fr.png" alt="FR">
                 <span>France</span>
             </div>
         </a>
 
-        <a href="famille.php" class="country" style="background-image: url('../images/canada.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/canada.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/ca.png" class="flag-icon"> <span>Canada</span></div>
         </a>
 
-        <a href="famille.php" class="country" style="background-image: url('../images/espagne.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/espagne.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/es.png" class="flag-icon"> <span>Espagne</span></div>
         </a>
-        <a href="famille.php" class="country" style="background-image: url('../images/bulgarie.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/bulgarie.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/bg.png" class="flag-icon"> <span>Bulgarie</span></div>
         </a>
 
-        <a href="famille.php" class="country" style="background-image: url('../images/turquie.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/turquie.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/tr.png" class="flag-icon"> <span>Turquie</span></div>
         </a>
 
-        <a href="famille.php" class="country" style="background-image: url('../images/italie.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/italie.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/it.png" class="flag-icon"> <span>Italie</span></div>
         </a>
 
-        <a href="famille.php" class="country" style="background-image: url('../images/USA.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/USA.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/us.png" class="flag-icon"> <span>USA</span></div>
         </a>
         
-        <a href="famille.php" class="country" style="background-image: url('../images/allemagne.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/allemagne.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/de.png" class="flag-icon"> <span>Allemagne</span></div>
         </a>
         
-        <a href="famille.php" class="country" style="background-image: url('../images/istonie.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/istonie.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/ee.png" class="flag-icon"> <span>Estonie</span></div>
         </a>
         
-        <a href="famille.php" class="country" style="background-image: url('../images/malte.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/malte.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/mt.png" class="flag-icon"> <span>Malte</span></div>
         </a>
     
-        <a href="famille.php" class="country" style="background-image: url('../images/Pologne.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/Pologne.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/pl.png" class="flag-icon"> <span>Pologne</span></div>
         </a>
         
-        <a href="famille.php" class="country" style="background-image: url('../images/belgique.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/belgique.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/be.png" class="flag-icon"> <span>Belgique</span></div>
         </a>
          
-        <a href="famille.php" class="country" style="background-image: url('../images/roumanie.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/roumanie.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/ro.png" class="flag-icon"> <span>Roumanie</span></div>
         </a>
          
-        <a href="famille.php" class="country" style="background-image: url('../images/portugal.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/portugal.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/pt.png" class="flag-icon"> <span>Portugal</span></div>
         </a>
          
-        <a href="famille.php" class="country" style="background-image: url('../images/uk.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/uk.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/gb.png" class="flag-icon"> <span>Royaume-Uni</span></div>
         </a>
-        <a href="famille.php" class="country" style="background-image: url('../images/irlande.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/irlande.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/ir.png" class="flag-icon"> <span>Irlande</span></div>
         </a>
-       <a href="famille.php" class="country" style="background-image: url('../images/luxembourg.jpg');">
+       <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/luxembourg.jpg');">
             <div class="country-label">
                 <img src="https://flagcdn.com/w40/lu.png" class="flag-icon"> 
                 <span>Luxembourg</span>
             </div>
         </a>
-        <a href="famille.php" class="country" style="background-image: url('../images/suisse.jpg');">
+        <a href="../../public/famille/famille.php" class="country" style="background-image: url('../images/suisse.jpg');">
             <div class="country-label"><img src="https://flagcdn.com/w40/ch.png" class="flag-icon"> <span>Suisse</span></div>
         </a>
     </div>

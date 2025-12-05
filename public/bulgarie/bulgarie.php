@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__ . '/../../config.php';
+require_once __DIR__ . '../../../config.php';
 $page_title = "Bulgarie — Services";
-include __DIR__ . '/../../includes/header.php';
+include __DIR__ . '../../../includes/header.php';
 ?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -58,7 +58,7 @@ include __DIR__ . '/../../includes/header.php';
           <li><i class="fas fa-check-circle"></i> Rappels automatiques</li>
         </ul>
         <div class="card-actions">
-          <a class="bulgarie-btn" href="/babylone/rendez_vous.php">
+          <a class="bulgarie-btn" href="../../rendez_vous.php">
             <span>Prendre RDV</span>
             <i class="fas fa-arrow-right"></i>
           </a>
@@ -85,7 +85,7 @@ include __DIR__ . '/../../includes/header.php';
           <li><i class="fas fa-check-circle"></i> Orientation académique</li>
         </ul>
         <div class="card-actions">
-          <a class="bulgarie-btn" href="/babylone/public/bulgarie/etude/etude.php">
+          <a class="bulgarie-btn" href="../bulgarie/etude/etude.php">
             <span>Découvrir</span>
             <i class="fas fa-arrow-right"></i>
           </a>

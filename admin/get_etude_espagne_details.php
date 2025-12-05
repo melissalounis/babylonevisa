@@ -13,22 +13,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     exit();
 }
 
-// Configuration de la base de données
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'babylone_service');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-
-// Connexion à la base de données
-try {
-    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch(PDOException $e) {
-    http_response_code(500);
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Erreur de connexion à la base de données']);
-    exit();
-}
+require_once '../config.php';
 
 // Récupérer l'ID de la demande
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {

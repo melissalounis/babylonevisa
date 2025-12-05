@@ -4,19 +4,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Connexion BDD
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
-
-try {
-    $db = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-    ]);
-} catch(PDOException $e) {
-    die("Erreur connexion BDD: " . $e->getMessage());
-}
+require_once '../config.php';
 
 // Vérification admin
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {

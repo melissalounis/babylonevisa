@@ -1,21 +1,35 @@
 <?php
 session_start();
 
-// Afficher les messages d'erreur s'ils existent
+// Définir les messages de session s'ils existent déjà
 if (isset($_SESSION['error_message'])) {
-    echo '<div class="alert alert-danger alert-dismissible fade show" style="margin: 20px;">
-            <i class="fas fa-exclamation-triangle"></i> ' . $_SESSION['error_message'] . '
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>';
+    $error_message = $_SESSION['error_message'];
     unset($_SESSION['error_message']);
 }
 
 if (isset($_SESSION['success_message'])) {
-    echo '<div class="alert alert-success alert-dismissible fade show" style="margin: 20px;">
-            <i class="fas fa-check-circle"></i> ' . $_SESSION['success_message'] . '
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>';
+    $success_message = $_SESSION['success_message'];
     unset($_SESSION['success_message']);
+}
+
+// Traiter la soumission du formulaire
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Simulation de traitement des données
+    $nom = $_POST['nom'] ?? '';
+    $email = $_POST['email'] ?? '';
+    
+    // Rediriger vers la même page avec un message de succès
+    $_SESSION['success_message'] = 'Votre demande d\'admission a été soumise avec succès ! Nous vous contacterons bientôt.';
+    
+    // Rediriger pour éviter le re-soumission
+    header('Location: ' . $_SERVER['PHP_SELF']);
+    exit;
+}
+
+// Vérifier si on affiche la confirmation
+$show_confirmation = isset($_SESSION['form_submitted']) && $_SESSION['form_submitted'] === true;
+if ($show_confirmation) {
+    unset($_SESSION['form_submitted']);
 }
 ?>
 <!DOCTYPE html>
@@ -28,7 +42,7 @@ if (isset($_SESSION['success_message'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Garder le même CSS que votre fichier original */
+        /* Garder TOUT le CSS existant */
         :root {
             --belgique-black: #070988;
             --belgique-yellow: #FDDA24;
@@ -368,6 +382,50 @@ if (isset($_SESSION['success_message'])) {
             background: rgba(7, 9, 136, 0.05);
         }
         
+        /* Nouveau style pour la section des documents de licence */
+        .licence-section {
+            background: rgba(255, 107, 53, 0.05);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+            border-left: 4px solid var(--accent-orange);
+        }
+        
+        /* Styles pour la confirmation */
+        .confirmation-message {
+            text-align: center;
+            padding: 50px 30px;
+        }
+        
+        .confirmation-icon {
+            font-size: 5rem;
+            color: var(--success-color);
+            margin-bottom: 25px;
+        }
+        
+        .confirmation-message h2 {
+            color: var(--belgique-black);
+            margin-bottom: 20px;
+            font-size: 2.2rem;
+        }
+        
+        .confirmation-message p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: #555;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.8;
+        }
+        
+        .confirmation-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
         @media (max-width: 768px) {
             .card-header h1 {
                 font-size: 1.9rem;
@@ -390,6 +448,10 @@ if (isset($_SESSION['success_message'])) {
                 width: 100%;
                 justify-content: center;
             }
+            
+            .confirmation-actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -401,151 +463,244 @@ if (isset($_SESSION['success_message'])) {
             <p>Formulaire pour admission dans les établissements belges</p>
         </div>
 
-        <form method="post" action="save_belgique.php" class="form" enctype="multipart/form-data" id="belgique-form">
-            <!-- Informations personnelles -->
-            <div class="form-section">
-                <h2><i class="fas fa-user-graduate"></i> Informations personnelles</h2>
-                <div class="form-group">
-                    <label for="nom">Nom complet <span class="required">*</span></label>
-                    <input type="text" id="nom" name="nom" required>
+        <?php if (isset($success_message)): ?>
+            <!-- Section de confirmation -->
+            <div class="confirmation-message">
+                <div class="confirmation-icon">
+                    <i class="fas fa-check-circle"></i>
                 </div>
+                <h2>Demande soumise avec succès !</h2>
+                <p><?php echo $success_message; ?></p>
                 
-                <div class="form-group">
-                    <label for="naissance">Date de naissance <span class="required">*</span></label>
-                    <input type="date" id="naissance" name="naissance" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="nationalite">Nationalité <span class="required">*</span></label>
-                    <input type="text" id="nationalite" name="nationalite" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="telephone">Numéro de téléphone <span class="required">*</span></label>
-                    <input type="tel" id="telephone" name="telephone" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="email">Email <span class="required">*</span></label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="adresse">Adresse complète <span class="required">*</span></label>
-                    <textarea id="adresse" name="adresse" rows="3" required></textarea>
+                <div class="confirmation-actions">
+                    <a href="<?php echo $_SERVER['PHP_SELF']; ?>" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nouvelle demande
+                    </a>
+                    <a href="../../index.php" class="btn btn-outline">
+                        <i class="fas fa-home"></i> Retour à l'accueil
+                    </a>
                 </div>
             </div>
-            
-            <!-- Section Remplissage documents -->
-            <div class="form-section">
-                <h2><i class="fas fa-file-alt"></i> Remplissage des documents</h2>
-                
-                <div class="form-group">
-                    <label for="niveau_etude">Niveau actuel <span class="required">*</span></label>
-                    <select id="niveau_etude" name="niveau_etude" required onchange="toggleEquivalenceSection()">
-                        <option value="">-- Choisir votre niveau --</option>
-                        <option value="bac">Bac</option>
-                        <option value="l1">L1</option>
-                        <option value="l2">L2</option>
-                        <option value="l3">L3</option>
-                        <option value="master">Master</option>
-                    </select>
-                </div>
-
-        <!-- Section Équivalence du Bac (uniquement pour L1, L2, L3) -->
-<div id="equivalence_section" class="equivalence-section hidden">
-    <h3><i class="fas fa-balance-scale"></i> Équivalence du Bac</h3>
-    <div class="form-group">
-        <label>Avez-vous l'équivalence de votre bac pour la Belgique ?</label>
-        <div style="display: flex; gap: 15px; margin-top: 10px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="radio" name="equivalence_bac" value="oui" onchange="toggleEquivalenceUpload()" style="margin-right: 8px;">
-                Oui
-            </label>
-            <label style="display: flex; align-items: center; cursor: pointer;">
-                <input type="radio" name="equivalence_bac" value="non" onchange="toggleEquivalenceUpload()" style="margin-right: 8px;">
-                Non
-            </label>
-        </div>
-    </div>
-    
-    <div id="equivalence_upload" class="form-group hidden">
-        <label for="document_equivalence">Document d'équivalence du Bac <span class="required">*</span></label>
-        <div class="file-input-container">
-            <input type="file" id="document_equivalence" name="document_equivalence">
-            <label for="document_equivalence" class="file-label">
-                <i class="fas fa-upload"></i>
-                <span class="file-text">Choisir un fichier</span>
-            </label>
-        </div>
-        <div class="file-hint">Document officiel d'équivalence du Bac (PDF - Max. 5MB)</div>
-    </div>
-    
-    <div id="demande_equivalence" class="form-group hidden">
-        <p style="color: var(--accent-orange); margin-bottom: 15px;">
-            <i class="fas fa-exclamation-triangle"></i> 
-            Vous devez demander l'équivalence de votre bac pour pouvoir étudier en Belgique.
-        </p>
-        <button type="button" class="btn btn-secondary" onclick="demanderEquivalence()">
-            <i class="fas fa-file-contract"></i> Demander l'équivalence
-        </button>
-    </div>
-</div>
-            
-            <!-- Documents communs -->
-            <div class="form-section">
-                <h2><i class="fas fa-file-upload"></i> Documents requis</h2>
-                
-                <div class="form-group">
-                    <label for="photo">Photo <span class="required">*</span></label>
-                    <div class="file-input-container">
-                        <input type="file" id="photo" name="photo" required>
-                        <label for="photo" class="file-label">
-                            <i class="fas fa-upload"></i>
-                            <span class="file-text">Choisir un fichier</span>
-                        </label>
+        <?php else: ?>
+            <!-- Formulaire d'admission -->
+            <form method="post" action="<?php echo $_SERVER['PHP_SELF']; ?>" class="form" id="belgique-form">
+                <!-- Informations personnelles -->
+                <div class="form-section">
+                    <h2><i class="fas fa-user-graduate"></i> Informations personnelles</h2>
+                    <div class="form-group">
+                        <label for="nom">Nom complet <span class="required">*</span></label>
+                        <input type="text" id="nom" name="nom" required>
                     </div>
-                    <div class="file-hint">Photo (PNG, JPG - Max. 5MB)</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="passport">Passeport <span class="required">*</span></label>
-                    <div class="file-input-container">
-                        <input type="file" id="passport" name="passport" required>
-                        <label for="passport" class="file-label">
-                            <i class="fas fa-upload"></i>
-                            <span class="file-text">Choisir un fichier</span>
-                        </label>
+                    
+                    <div class="form-group">
+                        <label for="naissance">Date de naissance <span class="required">*</span></label>
+                        <input type="date" id="naissance" name="naissance" required>
                     </div>
-                    <div class="file-hint">Passeport en cours de validité (PDF, JPG - Max. 5MB)</div>
+                    
+                    <div class="form-group">
+                        <label for="nationalite">Nationalité <span class="required">*</span></label>
+                        <input type="text" id="nationalite" name="nationalite" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="telephone">Numéro de téléphone <span class="required">*</span></label>
+                        <input type="tel" id="telephone" name="telephone" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email <span class="required">*</span></label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="adresse">Adresse complète <span class="required">*</span></label>
+                        <textarea id="adresse" name="adresse" rows="3" required></textarea>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Documents supplémentaires -->
-            <div class="form-section">
-                <h2><i class="fas fa-file-medical"></i> Documents supplémentaires</h2>
-                <p style="margin-bottom: 20px; color: #64748b;">
-                    Vous pouvez ajouter des documents supplémentaires comme des lettres de recommandation, 
-                    attestations de formation, ou autres documents pertinents.
-                </p>
                 
-                <div id="documents-supplementaires">
-                    <!-- Les documents supplémentaires seront ajoutés ici dynamiquement -->
+                <!-- Section Remplissage documents -->
+                <div class="form-section">
+                    <h2><i class="fas fa-file-alt"></i> Remplissage des documents</h2>
+                    
+                    <div class="form-group">
+                        <label for="niveau_etude">Niveau actuel <span class="required">*</span></label>
+                        <select id="niveau_etude" name="niveau_etude" required onchange="toggleSections()">
+                            <option value="">-- Choisir votre niveau --</option>
+                            <option value="bac">Bac</option>
+                            <option value="l1">L1</option>
+                            <option value="l2">L2</option>
+                            <option value="l3">L3</option>
+                            <option value="master">Master</option>
+                        </select>
+                    </div>
+
+                    <!-- Section Équivalence du Bac (uniquement pour L1, L2, L3) -->
+                    <div id="equivalence_section" class="equivalence-section hidden">
+                        <h3><i class="fas fa-balance-scale"></i> Équivalence du Bac</h3>
+                        <div class="form-group">
+                            <label>Avez-vous l'équivalence de votre bac pour la Belgique ?</label>
+                            <div style="display: flex; gap: 15px; margin-top: 10px;">
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="equivalence_bac" value="oui" onchange="toggleEquivalenceUpload()" style="margin-right: 8px;">
+                                    Oui
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="equivalence_bac" value="non" onchange="toggleEquivalenceUpload()" style="margin-right: 8px;">
+                                    Non
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="equivalence_upload" class="form-group hidden">
+                            <label for="document_equivalence">Document d'équivalence du Bac <span class="required">*</span></label>
+                            <div class="file-input-container">
+                                <input type="file" id="document_equivalence" name="document_equivalence">
+                                <label for="document_equivalence" class="file-label">
+                                    <i class="fas fa-upload"></i>
+                                    <span class="file-text">Choisir un fichier</span>
+                                </label>
+                            </div>
+                            <div class="file-hint">Document officiel d'équivalence du Bac (PDF - Max. 5MB)</div>
+                        </div>
+                        
+                        <div id="demande_equivalence" class="form-group hidden">
+                            <p style="color: var(--accent-orange); margin-bottom: 15px;">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                Vous devez demander l'équivalence de votre bac pour pouvoir étudier en Belgique.
+                            </p>
+                            <button type="button" class="btn btn-secondary" onclick="demanderEquivalence()">
+                                <i class="fas fa-file-contract"></i> Demander l'équivalence
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Section Documents de Licence (uniquement pour Master) -->
+                    <div id="licence_section" class="licence-section hidden">
+                        <h3><i class="fas fa-graduation-cap"></i> Documents de Licence</h3>
+                        <p style="margin-bottom: 20px; color: #666;">
+                            Pour une admission en Master, vous devez fournir les documents suivants relatifs à votre Licence :
+                        </p>
+                        
+                        <div class="form-group">
+                            <label for="releves_licence_l1">Relevés de notes Licence 1 <span class="required">*</span></label>
+                            <div class="file-input-container">
+                                <input type="file" id="releves_licence_l1" name="releves_licence_l1[]" multiple>
+                                <label for="releves_licence_l1" class="file-label">
+                                    <i class="fas fa-upload"></i>
+                                    <span class="file-text">Choisir un ou plusieurs fichiers</span>
+                                </label>
+                            </div>
+                            <div class="file-hint">Tous les relevés de notes de L1 (PDF, JPG, PNG - Max 5MB par fichier)</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="releves_licence_l2">Relevés de notes Licence 2 <span class="required">*</span></label>
+                            <div class="file-input-container">
+                                <input type="file" id="releves_licence_l2" name="releves_licence_l2[]" multiple>
+                                <label for="releves_licence_l2" class="file-label">
+                                    <i class="fas fa-upload"></i>
+                                    <span class="file-text">Choisir un ou plusieurs fichiers</span>
+                                </label>
+                            </div>
+                            <div class="file-hint">Tous les relevés de notes de L2 (PDF, JPG, PNG - Max 5MB par fichier)</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="releves_licence_l3">Relevés de notes Licence 3 <span class="required">*</span></label>
+                            <div class="file-input-container">
+                                <input type="file" id="releves_licence_l3" name="releves_licence_l3[]" multiple>
+                                <label for="releves_licence_l3" class="file-label">
+                                    <i class="fas fa-upload"></i>
+                                    <span class="file-text">Choisir un ou plusieurs fichiers</span>
+                                </label>
+                            </div>
+                            <div class="file-hint">Tous les relevés de notes de L3 (PDF, JPG, PNG - Max 5MB par fichier)</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="diplome_licence">Diplôme de Licence <span class="required">*</span></label>
+                            <div class="file-input-container">
+                                <input type="file" id="diplome_licence" name="diplome_licence">
+                                <label for="diplome_licence" class="file-label">
+                                    <i class="fas fa-file-certificate"></i>
+                                    <span class="file-text">Choisir le fichier</span>
+                                </label>
+                            </div>
+                            <div class="file-hint">Diplôme de Licence (PDF, JPG, PNG - Max 5MB)</div>
+                        </div>
+                    </div>
+
+                    <!-- Conteneur pour les documents obligatoires selon le niveau -->
+                    <div id="docs_obligatoires"></div>
                 </div>
                 
-                <div class="add-document-btn" onclick="ajouterDocumentSupplementaire()">
-                    <i class="fas fa-plus"></i>
-                    Ajouter un document
+                <!-- Documents communs -->
+                <div class="form-section">
+                    <h2><i class="fas fa-file-upload"></i> Documents requis pour tous</h2>
+                    
+                    <div class="form-group">
+                        <label for="photo">Photo d'identité <span class="required">*</span></label>
+                        <div class="file-input-container">
+                            <input type="file" id="photo" name="photo">
+                            <label for="photo" class="file-label">
+                                <i class="fas fa-upload"></i>
+                                <span class="file-text">Choisir un fichier</span>
+                            </label>
+                        </div>
+                        <div class="file-hint">Photo d'identité récente (PNG, JPG - Max. 5MB)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="passport">Passeport <span class="required">*</span></label>
+                        <div class="file-input-container">
+                            <input type="file" id="passport" name="passport">
+                            <label for="passport" class="file-label">
+                                <i class="fas fa-upload"></i>
+                                <span class="file-text">Choisir un fichier</span>
+                            </label>
+                        </div>
+                        <div class="file-hint">Passeport en cours de validité (PDF, JPG - Max. 5MB)</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="certificat_scolarite_actuel">Certificat de scolarité actuel <span class="required">*</span></label>
+                        <div class="file-input-container">
+                            <input type="file" id="certificat_scolarite_actuel" name="certificat_scolarite_actuel">
+                            <label for="certificat_scolarite_actuel" class="file-label">
+                                <i class="fas fa-upload"></i>
+                                <span class="file-text">Choisir un fichier</span>
+                            </label>
+                        </div>
+                        <div class="file-hint">Certificat de scolarité de l'année en cours (PDF, JPG - Max. 5MB)</div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Actions -->
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-paper-plane"></i> Soumettre la demande
-                </button>
-            </div>
-        </form>
+                <!-- Documents supplémentaires -->
+                <div class="form-section">
+                    <h2><i class="fas fa-file-medical"></i> Documents supplémentaires</h2>
+                    <p style="margin-bottom: 20px; color: #64748b;">
+                        Vous pouvez ajouter des documents supplémentaires comme des lettres de recommandation, 
+                        attestations de formation, ou autres documents pertinents.
+                    </p>
+                    
+                    <div id="documents-supplementaires">
+                        <!-- Les documents supplémentaires seront ajoutés ici dynamiquement -->
+                    </div>
+                    
+                    <div class="add-document-btn" onclick="ajouterDocumentSupplementaire()">
+                        <i class="fas fa-plus"></i>
+                        Ajouter un document
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Soumettre la demande
+                    </button>
+                </div>
+            </form>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -574,7 +729,7 @@ if (isset($_SESSION['success_message'])) {
         });
         
         // Form validation before submission
-        document.getElementById('belgique-form').addEventListener('submit', function(e) {
+        document.getElementById('belgique-form')?.addEventListener('submit', function(e) {
             // Validation basique
             const requiredFields = document.querySelectorAll('input[required], select[required], textarea[required]');
             let valid = true;
@@ -599,20 +754,17 @@ if (isset($_SESSION['success_message'])) {
                     alert('Veuillez indiquer si vous avez l\'équivalence du bac');
                     return false;
                 }
-                
-                if (hasEquivalence.value === 'oui') {
-                    const equivalenceFile = document.getElementById('document_equivalence');
-                    if (!equivalenceFile || !equivalenceFile.files.length) {
-                        valid = false;
-                        alert('Veuillez télécharger votre document d\'équivalence du bac');
-                        return false;
-                    }
-                }
             }
             
             if (!valid) {
                 e.preventDefault();
                 alert('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+            
+            // Confirmation avant soumission
+            if (!confirm('Êtes-vous sûr de vouloir soumettre votre demande d\'admission ?')) {
+                e.preventDefault();
                 return;
             }
         });
@@ -624,48 +776,40 @@ if (isset($_SESSION['success_message'])) {
             { label: "Relevé de notes 1ère année", name: "releve_2nde", type: "file" },
             { label: "Relevé de notes 2ème année", name: "releve_1ere", type: "file" },
             { label: "Relevé de notes Terminale", name: "releve_terminale", type: "file" },
-            { label: "Relevé de notes Bac", name: "releve_bac", type: "file" },
-            { label: "Certificat de scolarité (année en cours)", name: "certificat_scolarite", type: "file" }
+            { label: "Relevé de notes Bac", name: "releve_bac", type: "file" }
         ],
         l1: [
             { label: "Relevé de notes 1ère année", name: "releve_2nde", type: "file" },
             { label: "Relevé de notes 2ème année", name: "releve_1ere", type: "file" },
             { label: "Relevé de notes Terminale", name: "releve_terminale", type: "file" },
             { label: "Relevé de notes Bac", name: "releve_bac", type: "file" },
-            { label: "Diplôme Bac", name: "diplome_bac", type: "file" },
-            { label: "Certificat de scolarité (année en cours)", name: "certificat_scolarite", type: "file" }
+            { label: "Diplôme Bac", name: "diplome_bac", type: "file" }
         ],
         l2: [
             { label: "Relevé de notes Bac", name: "releve_bac", type: "file" },
             { label: "Diplôme Bac", name: "diplome_bac", type: "file" },
-            { label: "Relevé de notes L1", name: "releve_l1", type: "file" },
-            { label: "Certificat de scolarité (année en cours)", name: "certificat_scolarite", type: "file" }
+            { label: "Relevé de notes L1", name: "releve_l1", type: "file" }
         ],
         l3: [
             { label: "Relevé de notes Bac", name: "releve_bac", type: "file" },
             { label: "Diplôme Bac", name: "diplome_bac", type: "file" },
             { label: "Relevé de notes L1", name: "releve_l1", type: "file" },
-            { label: "Relevé de notes L2", name: "releve_l2", type: "file" },
-            { label: "Certificat de scolarité (année en cours)", name: "certificat_scolarite", type: "file" }
+            { label: "Relevé de notes L2", name: "releve_l2", type: "file" }
         ],
         master: [
             { label: "Relevé de notes Bac", name: "releve_bac", type: "file" },
-            { label: "Diplôme Bac", name: "diplome_bac", type: "file" },
-            { label: "Relevé de notes L1", name: "releve_l1", type: "file" },
-            { label: "Relevé de notes L2", name: "releve_l2", type: "file" },
-            { label: "Relevé de notes L3", name: "releve_l3", type: "file" },
-            { label: "Diplôme Licence", name: "diplome_licence", type: "file" },
-            { label: "Certificat de scolarité (année en cours)", name: "certificat_scolarite", type: "file" }
+            { label: "Diplôme Bac", name: "diplome_bac", type: "file" }
         ]
     };
     
-    // Fonction pour afficher/masquer la section équivalence
-    function toggleEquivalenceSection() {
+    // Fonction pour afficher/masquer les sections
+    function toggleSections() {
         const niveau = document.getElementById('niveau_etude').value;
         const equivalenceSection = document.getElementById('equivalence_section');
+        const licenceSection = document.getElementById('licence_section');
         
-        // Afficher uniquement pour L1, L2, L3
-        if (niveau === 'bac' ||niveau === 'l1' || niveau === 'l2' || niveau === 'l3') {
+        // Section Équivalence du Bac (uniquement pour L1, L2, L3)
+        if (niveau === 'l1' || niveau === 'l2' || niveau === 'l3') {
             equivalenceSection.classList.remove('hidden');
         } else {
             equivalenceSection.classList.add('hidden');
@@ -677,6 +821,23 @@ if (isset($_SESSION['success_message'])) {
             document.getElementById('demande_equivalence').classList.add('hidden');
         }
         
+        // Section Documents de Licence (uniquement pour Master)
+        if (niveau === 'master') {
+            licenceSection.classList.remove('hidden');
+        } else {
+            licenceSection.classList.add('hidden');
+            // Réinitialiser les champs de licence
+            const licenceInputs = licenceSection.querySelectorAll('input[type="file"]');
+            licenceInputs.forEach(input => {
+                input.value = '';
+                const label = input.nextElementSibling;
+                const fileText = label.querySelector('.file-text');
+                fileText.textContent = input.multiple ? 'Choisir un ou plusieurs fichiers' : 'Choisir un fichier';
+                label.classList.remove('file-selected');
+            });
+        }
+        
+        // Afficher les documents obligatoires selon le niveau
         renderDocs();
     }
     
@@ -690,25 +851,18 @@ if (isset($_SESSION['success_message'])) {
             if (hasEquivalence.value === 'oui') {
                 uploadSection.classList.remove('hidden');
                 demandeSection.classList.add('hidden');
-                // Rendre le champ obligatoire
-                const input = uploadSection.querySelector('input[type="file"]');
-                input.required = true;
             } else {
                 uploadSection.classList.add('hidden');
                 demandeSection.classList.remove('hidden');
-                // Rendre le champ non obligatoire
-                const input = uploadSection.querySelector('input[type="file"]');
-                input.required = false;
             }
         }
     }
     
     // Fonction pour simuler la demande d'équivalence
-  // Fonction pour simuler la demande d'équivalence
-function demanderEquivalence() {
-    // Redirection vers la page d'équivalence
-    window.location.href = 'equivalence.php';
-}
+    function demanderEquivalence() {
+        // Redirection vers la page d'équivalence
+        window.location.href = 'equivalence.php';
+    }
     
     // Fonction pour afficher les champs selon le niveau choisi
     function renderDocs() {
@@ -717,7 +871,7 @@ function demanderEquivalence() {
         docsContainer.innerHTML = '';
 
         if (configDocs[niveau]) {
-            docsContainer.innerHTML = '<h3>Documents requis pour votre niveau</h3>';
+            docsContainer.innerHTML = '<h3>Documents spécifiques à votre niveau</h3>';
             
             configDocs[niveau].forEach(doc => {
                 const docElement = document.createElement('div');
@@ -776,9 +930,9 @@ function demanderEquivalence() {
                 </select>
             </div>
             <div class="form-group">
-                <label for="document_supp_${documentCounter}">Document <span class="required">*</span></label>
+                <label for="document_supp_${documentCounter}">Document</label>
                 <div class="file-input-container">
-                    <input type="file" id="document_supp_${documentCounter}" name="document_supp[]" required>
+                    <input type="file" id="document_supp_${documentCounter}" name="document_supp[]">
                     <label for="document_supp_${documentCounter}" class="file-label">
                         <i class="fas fa-upload"></i>
                         <span class="file-text">Choisir un fichier</span>

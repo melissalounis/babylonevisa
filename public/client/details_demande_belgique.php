@@ -6,18 +6,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-// Database connection
-$host = 'localhost';
-$dbname = 'babylone_service';
-$username = 'root';
-$password = '';
-
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Database connection failed: " . $e->getMessage());
-}
+require_once __DIR__ . '../../../config.php';
 
 // Get request ID and validate
 $demande_id = $_GET['id'] ?? 0;

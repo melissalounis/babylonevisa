@@ -1,6 +1,4 @@
-<?php
-// Section Destinations avec bouton Voir plus/Voir moins
-?>
+
 <style>
     /* ===== SECTION DESTINATIONS MODERNE ===== */
     .countries-section {

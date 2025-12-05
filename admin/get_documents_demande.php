@@ -2,11 +2,7 @@
 session_start();
 
 // Configuration de la base de données
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'babylone_service');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-
+require_once '../config.php';
 // Vérifier si l'administrateur est connecté
 if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
     header('Content-Type: application/json');
@@ -17,10 +13,7 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
 header('Content-Type: application/json; charset=UTF-8');
 
 try {
-    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    
+   
     // Valider l'ID de demande
     $demande_id = isset($_GET['demande_id']) ? (int)$_GET['demande_id'] : 0;
     
